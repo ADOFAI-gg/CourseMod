@@ -6,12 +6,13 @@ A mod for the game [“A Dance of Fire and Ice”](https://store.steampowered.co
 This project supports playing & editing player-made “course”.
 There are various features to help players build a course, release them,
 and even allow other mod developers to arbitrarily open any courses.
+
 More of that on the wiki(link todo).
 
 ## Overview
 - Uses Unity 2022.3.33f1 (must be in sync with the game)
 - Uses [Harmony 2](https://harmony.pardeike.net/)
-- Build, Deployment and Test options available at `Project Tools` under Unity Editor’s `Tools` ribbon menu.
+- Build options available at `Project Tools` under Unity Editor’s `Modding` ribbon menu.
 
 ## License
 LGPL 3.0; Refer to [LICENSE](LICENSE).
