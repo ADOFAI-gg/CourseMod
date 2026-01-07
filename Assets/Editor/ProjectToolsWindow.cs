@@ -300,7 +300,35 @@ namespace CourseMod.Editor {
 
 					ExtendedGUILayout.SectionTitle("Game Importer");
 
+					GUILayout.BeginHorizontal();
 					var adofaiPath = EditorGUILayout.TextField("ADOFAI Executable Path", config.adofaiPath);
+					if (GUILayout.Button("Find...", GUILayout.Width(60))) {
+						// ReSharper disable JoinDeclarationAndInitializer
+						string initialDirectory;
+						string extension;
+						// ReSharper restore JoinDeclarationAndInitializer
+						
+						#if UNITY_EDITOR_WIN
+						initialDirectory = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\A Dance of Fire and Ice";
+						extension = "exe";
+						#elif UNITY_EDITOR_OSX
+						initialDirectory = "~/Library/Application Support/Steam/steamapps/common/ADanceOfFireAndIce";
+						extension = "app";
+						#elif UNITY_EDITOR_LINUX
+						initialDirectory = "~/.local/share/Steam/steamapps/common/A Dance of Fire and Ice";
+						extension = string.Empty;
+						#else
+						initialDirectory = Application.dataPath;
+						extension = string.Empty;
+						#endif
+
+						var executablePath = EditorUtility.OpenFilePanel("Find Game Executable", initialDirectory, extension);
+						
+						if (!string.IsNullOrEmpty(executablePath))
+							adofaiPath = executablePath;
+					}
+					GUILayout.EndHorizontal();
+					
 					var modifiedPath = config.adofaiPath != adofaiPath;
 					var modified = modifiedPath;
 
