@@ -1,0 +1,16 @@
+{
+    "name": "Nobi.UiRoundedCorners.Editor",
+    "rootNamespace": "",
+    "references": ["GUID:232b396c33cee3a558f06bff60a174df"],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

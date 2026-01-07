@@ -1,0 +1,30 @@
+{
+    "name": "CourseMod",
+    "rootNamespace": "CourseMod",
+    "references": [
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Assembly-CSharp.dll",
+        "DemiLib.dll",
+        "DOTween.dll",
+        "DOTweenPro.dll",
+        "RDTools.dll",
+        "UnityModManager.dll",
+        "0Harmony.dll",
+        "System.Collections.Immutable.dll",
+        "IndexRange.dll",
+        "System.Threading.Channels.dll",
+        "Assembly-CSharp-firstpass.dll",
+        "Newtonsoft.Json.dll",
+        "Fluent.Net.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
