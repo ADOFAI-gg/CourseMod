@@ -7,7 +7,7 @@ This project supports playing & editing player-made “course”.
 There are various features to help players build a course, release them,
 and even allow other mod developers to arbitrarily open any courses.
 
-More of that on the wiki(link todo).
+More of that on the [wiki](https://github.com/ADOFAI-gg/CourseMod/wiki).
 
 ## Overview
 - Uses Unity 2022.3.33f1 (must be in sync with the game)
@@ -16,3 +16,5 @@ More of that on the wiki(link todo).
 
 ## License
 LGPL 3.0; Refer to [LICENSE](LICENSE).
+
+For files under [/Assets/Editor](./Assets/Editor), refer to [/Assets/Editor/LICENSE](./Assets/Editor/LICENSE).
