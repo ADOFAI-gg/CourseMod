@@ -220,6 +220,15 @@ namespace CourseMod.Patches {
 				return false;
 			}
 		}
+		
+		[HarmonyPatch(typeof(scrUIController), "Awake")]
+		public static class OverrideDifficulty {
+			private static void Postfix() {
+				if (!CourseState.PlayingCourse) return;
+
+				GCS.difficulty = Difficulty.Strict;
+			}
+		}
 
 		[HarmonyPatch(typeof(scnGame), "Awake")]
 		public static class SetupGameSceneParameters {
