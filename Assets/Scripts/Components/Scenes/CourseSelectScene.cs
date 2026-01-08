@@ -402,10 +402,22 @@ namespace CourseMod.Components.Scenes {
 
 				var courseFiles = CourseCollection.GetCoursePaths(destinationDirectory);
 
+				var first = true;
+
 				for (var i = 0; i < courseFiles.Length; i++) {
 					var currentCoursePath = courseFiles[i];
-					var course = CourseCollection.ReadSingleCourse(currentCoursePath);
-					SetupCourse(course, i == 0);
+					try {
+						var course = CourseCollection.ReadSingleCourse(currentCoursePath);
+						SetupCourse(course, first);
+						first = false;
+					} catch (Exception e) {
+						LogTools.LogException("Error reading course at path " + currentCoursePath, e);
+						try {
+							File.Delete(currentCoursePath);
+						} catch (Exception) {
+							// Ignored
+						}
+					}
 				}
 			} else {
 				var directoryName = Path.GetDirectoryName(path)!;

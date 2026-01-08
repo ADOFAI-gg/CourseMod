@@ -32,9 +32,13 @@ namespace CourseMod.Components.Scenes {
 				string[] courseFiles = CourseCollection.GetCoursePaths(coursePath);
 				_totalCourses = courseFiles.Length;
 				foreach (string path in courseFiles) {
-					Course course = await CourseCollection.ReadSingleCourseAsync(path);
-					CourseCollection.RegisterCourse(course);
-					LoadAfter(ref course);
+					try {
+						Course course = await CourseCollection.ReadSingleCourseAsync(path);
+						CourseCollection.RegisterCourse(course);
+						LoadAfter(ref course);
+					} catch (Exception e) {
+						LogTools.LogException("Error reading course at path " + path, e);
+					}
 				}
 			} catch (Exception e) {
 				LogTools.LogException("Error reading courses", e);
