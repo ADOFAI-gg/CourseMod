@@ -390,7 +390,6 @@ namespace CourseMod.Components.Scenes {
 			_playerSettings.Save();
 
 			string destinationDirectory;
-			string selectedCourseName;
 
 			if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) {
 				destinationDirectory =
@@ -401,28 +400,31 @@ namespace CourseMod.Components.Scenes {
 				var enc = Encoding.GetEncoding(949);
 				ZipFile.ExtractToDirectory(path, destinationDirectory, enc);
 
-				selectedCourseName = null;
+				var courseFiles = CourseCollection.GetCoursePaths(destinationDirectory);
+
+				for (var i = 0; i < courseFiles.Length; i++) {
+					var currentCoursePath = courseFiles[i];
+					var course = CourseCollection.ReadSingleCourse(currentCoursePath);
+					SetupCourse(course, i == 0);
+				}
 			} else {
 				var directoryName = Path.GetDirectoryName(path)!;
 				destinationDirectory = CourseCollection.ParseDestinationDirectory(Path.GetFileName(directoryName));
-
-				ExportTools.CopyFiles(destinationDirectory, directoryName);
-
-				selectedCourseName = Path.GetFileName(path);
+				
+				ExportTools.CopyFiles(destinationDirectory, path);
+				
+				var course = CourseCollection.ReadSingleCourse(Path.Combine(destinationDirectory, Path.GetFileName(path)));
+				SetupCourse(course, true);
 			}
+			return;
 
-			var courseFiles = CourseCollection.GetCoursePaths(destinationDirectory);
-
-			for (var i = 0; i < courseFiles.Length; i++) {
-				var currentCoursePath = courseFiles[i];
-				var course = CourseCollection.ReadSingleCourse(currentCoursePath);
+			void SetupCourse(Course course, bool select) {
 				var item = Instantiate(levelItemPrefab, coursesContainer);
 
 				item.CourseSelect = this;
 				item.AssignCourse(course);
 
-				if (selectedCourseName == null && i == 0 || Path.GetFileName(currentCoursePath) == selectedCourseName)
-					SelectItem(item);
+				if (select) SelectItem(item);
 			}
 		}
 
