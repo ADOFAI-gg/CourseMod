@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using ADOFAI;
+using CourseMod.DataModel;
 using GDMiniJSON;
 using JetBrains.Annotations;
 using Newtonsoft.Json.Linq;
@@ -21,7 +23,7 @@ namespace CourseMod.Utils {
 		private static readonly Dictionary<string, LevelEventType> LevelEventTypeNameToTypeWithFileRefs =
 			LevelEventTypesWithFileRefs.ToDictionary(type => type.ToString(), type => type);
 		
-		public static string[] GetLevelFiles(string path) {
+		private static string[] GetLevelFiles(string path) {
 			var fileContent = File.ReadAllText(path);
 			var lenientlyDeserializedObject = Json.Deserialize(fileContent);
 
@@ -58,7 +60,7 @@ namespace CourseMod.Utils {
 			var parentDirectory = Path.GetDirectoryName(path);
 			
 			return fileRefs
-				.Select(f => CombinePathNullable(parentDirectory, f))
+				.Select(f => StringTools.CombinePathNullable(parentDirectory, f))
 				.Concat(new[] {path})
 				.ToArray();
 			
@@ -109,9 +111,64 @@ namespace CourseMod.Utils {
 					_ => null
 				};
 			}
+		}
 
-			string CombinePathNullable([CanBeNull] string a, string b) =>
-				string.IsNullOrEmpty(a) ? b : Path.Combine(a, b);
+		public static void Zip([NotNull] string filename, Course course, [NotNull] string courseDirectory, [CanBeNull] string thumbnailPath) {
+			var levelFiles = course.Levels
+				.Select(level => GetLevelFiles(level.AbsolutePath));
+
+			var files = new List<string>() {
+				course.FilePath
+			};
+
+			if (!string.IsNullOrEmpty(thumbnailPath) && File.Exists(thumbnailPath))
+				files.Add(thumbnailPath);
+				
+			files.AddRange(levelFiles.SelectMany(f => f).Distinct());
+
+			using var stream = new FileStream(Path.Combine(courseDirectory, filename + ".zip"), FileMode.Create);
+			using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
+
+			foreach (var file in files)
+				archive.CreateEntryFromFile(file, GetTargetFileName(courseDirectory, filename, file));
+		}
+
+		public static void CopyFiles([CanBeNull] string targetDirectory, [NotNull] string coursePath) {
+			var course = CourseCollection.ReadSingleCourse(coursePath);
+			
+			var levelFiles = course.Levels
+				.Select(level => GetLevelFiles(level.AbsolutePath));
+
+			var files = new List<string>() {
+				course.FilePath
+			};
+			
+			var courseDirectory = Path.GetDirectoryName(coursePath);
+			var relativeThumbnailPath = course.Settings.ThumbnailFile;
+
+			if (!string.IsNullOrEmpty(relativeThumbnailPath)) {
+				var thumbnailPath = StringTools.CombinePathNullable(courseDirectory, course.Settings.ThumbnailFile);
+
+				if (File.Exists(thumbnailPath))
+					files.Add(thumbnailPath);
+			}
+				
+			files.AddRange(levelFiles.SelectMany(f => f).Distinct());
+
+			foreach (var file in files) {
+				var dist = GetTargetFileName(courseDirectory, targetDirectory, file);
+				File.Copy(file, dist, true);
+			}
+		}
+		
+		[NotNull]
+		private static string GetTargetFileName([CanBeNull] string relativeRoot, [CanBeNull] string parentDirectory, [NotNull] string file) {
+			var targetFileName = Path.GetFileName(file);
+
+			if (targetFileName.EndsWith(".course", StringComparison.OrdinalIgnoreCase))
+				file = StringTools.CombinePathNullable(Path.GetDirectoryName(file), "main.course");
+
+			return StringTools.CombinePathNullable(parentDirectory, Path.GetRelativePath(relativeRoot, file));
 		}
 	}
 }

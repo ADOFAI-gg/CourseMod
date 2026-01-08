@@ -53,6 +53,9 @@ namespace CourseMod.DataModel {
 			return Path.Combine(recordsPath, Id);
 		}
 
+		public string GetDefaultExportFilename() =>
+			$"{string.Join("_", Name.Split(Path.GetInvalidFileNameChars()))}";
+
 		public void GenerateReadonlyLevelsInfo() {
 			ReadonlyLevelsInfo = (from level in Levels
 				let meta = level.LevelMeta

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using JetBrains.Annotations;
 
 namespace CourseMod.Utils {
@@ -57,5 +58,8 @@ namespace CourseMod.Utils {
 
 			return s;
 		}
+		
+		public static string CombinePathNullable([CanBeNull] string a, string b) =>
+			string.IsNullOrEmpty(a) ? b : Path.Combine(a, b);
 	}
 }

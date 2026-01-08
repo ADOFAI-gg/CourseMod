@@ -406,7 +406,7 @@ namespace CourseMod.Components.Scenes {
 				var directoryName = Path.GetDirectoryName(path)!;
 				destinationDirectory = CourseCollection.ParseDestinationDirectory(Path.GetFileName(directoryName));
 
-				RDDirectory.Copy(directoryName, destinationDirectory, true);
+				ExportTools.CopyFiles(destinationDirectory, directoryName);
 
 				selectedCourseName = Path.GetFileName(path);
 			}

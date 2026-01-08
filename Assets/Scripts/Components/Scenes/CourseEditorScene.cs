@@ -527,39 +527,14 @@ namespace CourseMod.Components.Scenes {
 			RunWithUnsavedCheck(EditorPopupType.UnsavedContinue, () => {
 				var course = GetCourseWithAssertion();
 				var courseDirectory = Path.GetDirectoryName(course.FilePath)!;
-
-				var levelFiles = course.Levels
-					.Select(level => ExportTools.GetLevelFiles(level.AbsolutePath));
-
-				var files = new List<string>() {
-					course.FilePath
-				};
-
-				if (!string.IsNullOrEmpty(_lastThumbnailPath) && File.Exists(_lastThumbnailPath))
-					files.Add(_lastThumbnailPath);
 				
-				files.AddRange(levelFiles.SelectMany(f => f).Distinct());
+				var exportPath = FileDialogTools.ExportCourseFileDialog(StringTools.CombinePathNullable(courseDirectory, course.GetDefaultExportFilename()));
+				
+				if (string.IsNullOrEmpty(exportPath))
+					return;
 
-				var filename = $"{string.Join("_", course.Name.Split(Path.GetInvalidFileNameChars()))}";
-
-				using var stream = new FileStream(Path.Combine(courseDirectory, filename + ".zip"), FileMode.Create);
-				using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
-
-				foreach (var file in files) {
-					archive.CreateEntryFromFile(file, GetTargetFileName(courseDirectory, filename, file));
-				}
+				ExportTools.Zip(exportPath, course, courseDirectory, _lastThumbnailPath);
 			});
-
-			return;
-
-			string GetTargetFileName(string relativeRoot, string parentDirectory, string file) {
-				var targetFileName = Path.GetFileName(file);
-
-				if (targetFileName.EndsWith(".course", StringComparison.OrdinalIgnoreCase))
-					file = Path.Combine(Path.GetDirectoryName(file)!, "main.course");
-
-				return Path.Combine(parentDirectory, Path.GetRelativePath(relativeRoot, file));
-			}
 		}
 
 		private void TryApplyChanges() {

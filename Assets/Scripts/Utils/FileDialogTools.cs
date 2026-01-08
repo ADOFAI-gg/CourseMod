@@ -9,6 +9,7 @@ namespace CourseMod.Utils {
 	public static class FileDialogTools {
 		private static ExtensionFilter[] _courseFilter;
 		private static ExtensionFilter[] _courseAndZipFilter;
+		private static ExtensionFilter[] _zipFilter;
 		private static ExtensionFilter[] _customLevelFilter;
 		private static ExtensionFilter[] _imageFilter;
 		private static ExtensionFilter[] _videoFilter;
@@ -22,6 +23,10 @@ namespace CourseMod.Utils {
 
 			_courseAndZipFilter = new[] {
 				new ExtensionFilter(I18N.Get("general-file-dialog-course-description"), "course", "zip")
+			};
+
+			_zipFilter = new[] {
+				new ExtensionFilter(I18N.Get("general-file-dialog-course-description"), "zip")
 			};
 
 			_customLevelFilter = new[] {
@@ -82,6 +87,16 @@ namespace CourseMod.Utils {
 				initialPath ?? "",
 				initialPath.IsNullOrEmpty() ? "" : Path.GetFileName(initialPath),
 				_courseFilter);
+			return result;
+		}
+
+		public static string ExportCourseFileDialog(string initialPath) {
+			if (!_hasSetup) Setup();
+			var result = StandaloneFileBrowser.SaveFilePanel(
+				I18N.Get("editor-file-dialog-save-course"),
+				initialPath ?? "",
+				initialPath.IsNullOrEmpty() ? "" : Path.GetFileName(initialPath),
+				_zipFilter);
 			return result;
 		}
 
