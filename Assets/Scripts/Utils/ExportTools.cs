@@ -40,12 +40,11 @@ namespace CourseMod.Utils {
 
 			if (!rootObject.TryGetValueAs(EditorConstants.key_decorations, out JArray decorationsArray))
 				decorationsArray = new();
-			
-			var fileRefsFromLevelEvents = actionsArray.Concat(decorationsArray)
-				.Select(GetFileRefOrNull)
-				.ToArray();
 
-			List<string> fileRefs = new(fileRefsFromLevelEvents) {
+			var fileRefsFromLevelEvents = actionsArray.Concat(decorationsArray)
+				.Select(GetFileRefOrNull);
+
+			HashSet<string> fileRefs = new(fileRefsFromLevelEvents) {
 				settingsObject[EditorConstants.key_previewIcon]?.Value<string>(),
 				settingsObject[EditorConstants.key_previewImage]?.Value<string>(),
 				settingsObject[EditorConstants.key_artistPermission]?.Value<string>(),
@@ -54,7 +53,6 @@ namespace CourseMod.Utils {
 				settingsObject[EditorConstants.key_bgVideo]?.Value<string>(),
 			};
 					
-			fileRefs = fileRefs.Distinct().ToList();
 			fileRefs.Remove(null);
 
 			var parentDirectory = Path.GetDirectoryName(path);
@@ -114,17 +112,16 @@ namespace CourseMod.Utils {
 		}
 
 		public static void Zip([NotNull] string filename, Course course, [NotNull] string courseDirectory, [CanBeNull] string thumbnailPath) {
-			var levelFiles = course.Levels
-				.Select(level => GetLevelFiles(level.AbsolutePath));
-
-			var files = new List<string>() {
+			var files = new HashSet<string> {
 				course.FilePath
 			};
 
 			if (!string.IsNullOrEmpty(thumbnailPath) && File.Exists(thumbnailPath))
 				files.Add(thumbnailPath);
-				
-			files.AddRange(levelFiles.SelectMany(f => f).Distinct());
+
+			foreach(var level in course.Levels) 
+				foreach(var file in GetLevelFiles(level.AbsolutePath)) 
+					files.Add(file);
 
 			using var stream = new FileStream(Path.Combine(courseDirectory, filename + ".zip"), FileMode.Create);
 			using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
@@ -135,14 +132,10 @@ namespace CourseMod.Utils {
 
 		public static void CopyFiles([CanBeNull] string targetDirectory, [NotNull] string coursePath) {
 			var course = CourseCollection.ReadSingleCourse(coursePath);
-			
-			var levelFiles = course.Levels
-				.Select(level => GetLevelFiles(level.AbsolutePath));
-
-			var files = new List<string>() {
+			var files = new HashSet<string> {
 				course.FilePath
 			};
-			
+
 			var courseDirectory = Path.GetDirectoryName(coursePath);
 			var relativeThumbnailPath = course.Settings.ThumbnailFile;
 
@@ -152,8 +145,10 @@ namespace CourseMod.Utils {
 				if (File.Exists(thumbnailPath))
 					files.Add(thumbnailPath);
 			}
-				
-			files.AddRange(levelFiles.SelectMany(f => f).Distinct());
+
+			foreach(var level in course.Levels) 
+				foreach(var file in GetLevelFiles(level.AbsolutePath)) 
+					files.Add(file);
 
 			foreach (var file in files) {
 				var dist = GetTargetFileName(courseDirectory, targetDirectory, file);
