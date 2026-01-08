@@ -37,8 +37,7 @@ namespace CourseMod.Components.Scenes {
 					LoadAfter(ref course);
 				}
 			} catch (Exception e) {
-				LogTools.Log("Error reading courses: " + e.Message);
-				Console.WriteLine(e.ToString());
+				LogTools.LogException("Error reading courses", e);
 			}
 		}
 
@@ -124,8 +123,7 @@ namespace CourseMod.Components.Scenes {
 
 					PlayRecordSetupState = 1;
 				} catch (Exception e) {
-					LogTools.Log($"Error loading play record for course {CourseId}: {e.Message}");
-					Console.WriteLine(e.ToString());
+					LogTools.LogException("Error loading play record for course " + CourseId, e);
 				}
 			}
 
@@ -141,8 +139,7 @@ namespace CourseMod.Components.Scenes {
 								LevelMeta meta = new(level.AbsolutePath);
 								CourseCollection.LevelMetas[level.Path] = meta;
 							} catch (Exception e) {
-								LogTools.Log($"Error loading level meta for level at path {level.Path}: {e.Message}");
-								Console.WriteLine(e.ToString());
+								LogTools.LogException($"Error loading level meta for level at path {level.Path}", e);
 							}
 						}
 
