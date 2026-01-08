@@ -18,7 +18,7 @@ namespace CourseMod.Utils {
 			if (!Bundle)
 				throw new Exception("AssetBundle is not set");
 			T asset = Bundle.LoadAsset<T>(path);
-			return !asset ? throw new ArgumentException("The Asset \"" + path + "\" is doesn't exist") : asset;
+			return !asset ? throw new ArgumentException($"No asset found at \"{path}\"") : asset;
 		}
 	}
 }
