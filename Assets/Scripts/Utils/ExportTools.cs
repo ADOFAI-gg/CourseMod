@@ -68,6 +68,10 @@ namespace CourseMod.Utils {
 
 			bool IsTypeAndNonNull([CanBeNull] JToken token, JTokenType tokenType) =>
 				token is { HasValues: true } && token.Type == tokenType;
+			
+			// JValue is always HasValues == false
+			bool IsStringAndNonNull([CanBeNull] JToken token) =>
+				token is { Type: JTokenType.String };
 
 			bool TryGetEventType([CanBeNull] JToken levelEventToken, [CanBeNull] out string eventType) {
 				eventType = null;
@@ -76,7 +80,7 @@ namespace CourseMod.Utils {
 					return false;
 
 				var eventTypeToken = levelEventToken![EditorConstants.key_eventType];
-				if (!IsTypeAndNonNull(eventTypeToken, JTokenType.String))
+				if (!IsStringAndNonNull(eventTypeToken))
 					return false;
 
 				eventType = eventTypeToken.Value<string>();
@@ -86,12 +90,12 @@ namespace CourseMod.Utils {
 			string GetEventPropertyOrNull(JToken levelEventToken, string key) {
 				var propertyToken = levelEventToken[key];
 
-				if (!IsTypeAndNonNull(propertyToken, JTokenType.String))
+				if (!IsStringAndNonNull(propertyToken))
 					return null;
 				
 				return propertyToken.Value<string>();
 			}
-			
+
 			string GetFileRefOrNull([CanBeNull] JToken levelEventToken) {
 				const string decorationImageKey = "decorationImage";
 				if (!TryGetEventType(levelEventToken, out var eventTypeString) || eventTypeString == null)
