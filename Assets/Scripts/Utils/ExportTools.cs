@@ -54,6 +54,7 @@ namespace CourseMod.Utils {
 			};
 					
 			fileRefs.Remove(null);
+			fileRefs.Remove("");
 
 			var parentDirectory = Path.GetDirectoryName(path);
 			
