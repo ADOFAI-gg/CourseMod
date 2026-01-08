@@ -152,6 +152,11 @@ namespace CourseMod.Utils {
 
 			foreach (var file in files) {
 				var dist = GetTargetFileName(courseDirectory, targetDirectory, file);
+				var distDirectory = Path.GetDirectoryName(dist);
+				
+				if (!Directory.Exists(distDirectory))
+					Directory.CreateDirectory(distDirectory!);
+				
 				File.Copy(file, dist, true);
 			}
 		}
