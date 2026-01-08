@@ -576,7 +576,7 @@ namespace CourseMod.Components.Scenes {
 
 		public void Quit() {
 			CurrentCourse = null;
-			SceneManager.LoadScene("CourseSelect");
+			SceneManager.LoadScene(CourseSelectScene.SCENE_NAME);
 		}
 
 

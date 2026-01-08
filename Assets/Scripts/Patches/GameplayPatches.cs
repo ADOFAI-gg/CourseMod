@@ -214,7 +214,7 @@ namespace CourseMod.Patches {
 					return true;
 
 				scrUIController.instance.WipeToBlack(WipeDirection.StartsFromRight);
-				GCS.sceneToLoad = "CourseSelect";
+				GCS.sceneToLoad = CourseSelectScene.SCENE_NAME;
 				CourseState.Reset();
 
 				return false;
