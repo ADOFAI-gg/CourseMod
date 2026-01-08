@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using ADOFAI;
 using CourseMod.Components.Atoms;
 using CourseMod.Components.Atoms.Backdrop;
 using CourseMod.Components.Atoms.Button;
@@ -19,7 +19,10 @@ using CourseMod.DataModel;
 using CourseMod.Patches;
 using CourseMod.Utils;
 using DG.Tweening;
+using GDMiniJSON;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -525,22 +528,17 @@ namespace CourseMod.Components.Scenes {
 				var course = GetCourseWithAssertion();
 				var courseDirectory = Path.GetDirectoryName(course.FilePath)!;
 
-				var targetDirectories =
-					course.Levels.Select(level => Path.GetDirectoryName(level.AbsolutePath)).ToList();
+				var levelFiles = course.Levels
+					.Select(level => ExportTools.GetLevelFiles(level.AbsolutePath));
 
-				targetDirectories = targetDirectories.Distinct().ToList();
-				targetDirectories.Remove(null);
-				targetDirectories.Remove(courseDirectory);
-
-				var files = new List<string>() { course.FilePath, };
+				var files = new List<string>() {
+					course.FilePath
+				};
 
 				if (!string.IsNullOrEmpty(_lastThumbnailPath) && File.Exists(_lastThumbnailPath))
 					files.Add(_lastThumbnailPath);
-
-				foreach (var levelFiles in targetDirectories.Select(d =>
-					         Directory.GetFiles(d, "*", SearchOption.AllDirectories))) {
-					files.AddRange(levelFiles);
-				}
+				
+				files.AddRange(levelFiles.SelectMany(f => f).Distinct());
 
 				var filename = $"{string.Join("_", course.Name.Split(Path.GetInvalidFileNameChars()))}";
 
@@ -628,7 +626,7 @@ namespace CourseMod.Components.Scenes {
 			if (!TryChangeThumbnail(copyPath)) RemoveThumbnail();
 		}
 
-		private bool TryChangeThumbnail([NotNull] string path) {
+		private bool TryChangeThumbnail([System.Diagnostics.CodeAnalysis.NotNull] string path) {
 			path = Path.Combine(Path.GetDirectoryName(LastOpenedCoursePath)!, path);
 
 			var thumbnailSprite = ImageTools.OpenSprite(path);
