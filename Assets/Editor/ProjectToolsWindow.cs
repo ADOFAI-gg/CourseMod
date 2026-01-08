@@ -95,17 +95,30 @@ namespace CourseMod.Editor {
 			ReleaseStaticResources();
 			ReloadFileCache();
 
+			var scenesDirectory = Path.Combine(Application.dataPath, "Scenes");
+			var resourcesDirectory = Path.Combine(Application.dataPath, "Resources");
+			var buildDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Builds");
+
+			if (!Directory.Exists(scenesDirectory))
+				Directory.CreateDirectory(scenesDirectory);
+
+			if (!Directory.Exists(resourcesDirectory))
+				Directory.CreateDirectory(resourcesDirectory);
+
+			if (!Directory.Exists(buildDirectory))
+				Directory.CreateDirectory(buildDirectory);
+
 			_scenesDirectoryWatcher =
-				CreateWatcherForFile(Path.Combine(Application.dataPath, "Scenes"), "*.unity", false);
+				CreateWatcherForFile(scenesDirectory, "*.unity", false);
 
 			_assemblyDefinitionsDirectoryWatcher =
 				CreateWatcherForFile(Application.dataPath, "*.asmdef", true);
 
 			_fluentDirectoryWatcher =
-				CreateWatcherForFile(Path.Combine(Application.dataPath, "Resources"), "*.ftl", false);
+				CreateWatcherForFile(resourcesDirectory, "*.ftl", false);
 
 			_buildDirectoryWatcher =
-				CreateWatcherForDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Builds"), "*", false);
+				CreateWatcherForDirectory(buildDirectory, "*", false);
 
 			return;
 
