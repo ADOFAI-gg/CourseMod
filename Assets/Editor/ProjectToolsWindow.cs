@@ -431,6 +431,59 @@ namespace CourseMod.Editor {
 							config.buildEveryPlatform = buildEveryPlatform;
 							modified = true;
 						}
+
+						if (!buildEveryPlatform) {
+							using (new ExtendedGUILayout.IndentScope()) {
+								var buildTargets = config.BuildPlatforms;
+								
+								using (new GUILayout.HorizontalScope()) {
+									var buildTargetModified = false;
+
+									BuildTargetUI(BuildTarget.StandaloneWindows64);
+									BuildTargetUI(BuildTarget.StandaloneOSX);
+									BuildTargetUI(BuildTarget.StandaloneLinux64);
+
+									if (buildTargetModified) {
+										config.BuildPlatforms = buildTargets;
+										modified = true;
+									}
+									
+									void BuildTargetUI(BuildTarget b) {
+										var isAssigned = buildTargets.Contains(b);
+										
+										var buildTargetColor = isAssigned
+											? Color.green
+											: Color.gray;
+
+										var buildTargetString = b switch {
+											BuildTarget.StandaloneWindows64 => "Windows",
+											BuildTarget.StandaloneOSX => "MacOS",
+											BuildTarget.StandaloneLinux64 => "Linux",
+											_ => $"<Undefined> {b}"
+										};
+
+										if (isAssigned)
+											buildTargetString = $"<b>{buildTargetString}</b>";
+									
+										ExtendedGUILayout.SetGUIBackgroundColor(buildTargetColor);
+										if (GUILayout.Button(buildTargetString)) {
+											if (isAssigned)
+												buildTargets.Remove(b);
+											else
+												buildTargets.Add(b);
+
+											buildTargetModified = true;
+										}
+									}
+								}
+
+								var buildTargetMessage = buildTargets.Count == 0
+									? "Because no build targets are selected"
+									: "";
+
+								GUILayout.Label($"<color=#999999>{buildTargetMessage}</color>");
+							}
+						}
 					}
 
 					GUILayout.Space(8);
@@ -568,8 +621,16 @@ namespace CourseMod.Editor {
 					GUILayout.Space(12);
 
 					GUILayout.Label($"Cached Builds: {_buildCount} (Using <b>{_buildSizeString}</b> of Storage)");
-
 					ExtendedGUILayout.SetGUIBackgroundColor(Color.red);
+					
+					var autoDeleteBuilds =
+						GUILayout.Toggle(config.automaticallyDeleteBuilds, "Automatically Delete Builds");
+
+					if (autoDeleteBuilds != config.automaticallyDeleteBuilds) {
+						config.automaticallyDeleteBuilds = autoDeleteBuilds;
+						modified = true;
+					}
+
 					if (isBuilding) GUI.enabled = false;
 
 					using (new GUILayout.HorizontalScope()) {
@@ -596,17 +657,6 @@ namespace CourseMod.Editor {
 					if (isBuilding) GUI.enabled = true;
 
 					GUILayout.Space(12);
-
-					ExtendedGUILayout.SetGUIBackgroundColor(Color.red);
-					using (new ExtendedGUILayout.IndentScope()) {
-						var autoDeleteBuilds =
-							GUILayout.Toggle(config.automaticallyDeleteBuilds, "Automatically Delete Builds");
-
-						if (autoDeleteBuilds != config.automaticallyDeleteBuilds) {
-							config.automaticallyDeleteBuilds = autoDeleteBuilds;
-							modified = true;
-						}
-					}
 
 					ExtendedGUILayout.SetGUIBackgroundColor(Color.white);
 

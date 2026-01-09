@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -32,11 +33,26 @@ namespace CourseMod.Editor {
 		public bool developmentBuild = true;
 		public bool generateDebugSymbols;
 		public bool buildEveryPlatform;
+		public BuildTarget[] serializedBuildPlatforms;
 		public bool copyToDirectory;
 		public bool runApplication;
 		public bool runApplicationThroughSteam;
 		public int deleteBuildsExceptLastN;
 		public bool automaticallyDeleteBuilds;
+
+		private HashSet<BuildTarget> _buildTargets;
+		public HashSet<BuildTarget> BuildPlatforms {
+			get {
+				if (_buildTargets == null)
+					return _buildTargets ??= serializedBuildPlatforms.ToHashSet();
+
+				return _buildTargets;
+			}
+			set {
+				_buildTargets = value;
+				serializedBuildPlatforms = value.ToArray();
+			}
+		}
 
 		public readonly GameImporter Importer = new();
 		public readonly ModBuilder ModBuilder = new();
@@ -46,7 +62,7 @@ namespace CourseMod.Editor {
 			ModBuilder.DevelopmentBuild = developmentBuild;
 			ModBuilder.GenerateDebugSymbols = generateDebugSymbols;
 
-			ModBuilder.Build(copyDestination, buildEveryPlatform)
+			ModBuilder.Build(copyDestination, buildEveryPlatform, BuildPlatforms)
 				.ContinueWith(task => {
 					if (createZip) {
 						using var stream =

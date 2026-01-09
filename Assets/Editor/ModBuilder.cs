@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis;
@@ -25,7 +26,7 @@ namespace CourseMod.Editor {
 
 		public bool IsBuilding { get; private set; }
 
-		public async Task<string> Build(string copyDestination, bool allPlatforms) {
+		public async Task<string> Build([CanBeNull] string copyDestination, bool allPlatforms, [CanBeNull] HashSet<BuildTarget> buildTargets) {
 			try {
 				IsBuilding = true;
 				_defines = new List<string>();
@@ -40,7 +41,13 @@ namespace CourseMod.Editor {
 
 				WriteModInfo();
 				await BuildAssemblies();
-				BuildAssetBundles(!allPlatforms);
+				if (allPlatforms) {
+					BuildAllAssetBundles();
+				} else if (buildTargets == null || buildTargets.Count == 0) {
+					BuildAssetBundlesForCurrentPlatform();
+				} else {
+					BuildAssetBundles(buildTargets);
+				}
 
 				if (copyDestination != null) {
 					if (Directory.Exists(copyDestination))
@@ -171,20 +178,25 @@ namespace CourseMod.Editor {
 
 		private void WriteModInfo() => ModInfo.Info.WriteToFile(Path.Combine(_buildPath, "Info.json"));
 
-		private void BuildAssetBundles(bool currentPlatformOnly) {
-			if (currentPlatformOnly)
-				BuildAssetBundlesForPlatform(
-					Application.platform switch {
-						RuntimePlatform.WindowsEditor => BuildTarget.StandaloneWindows64,
-						RuntimePlatform.OSXEditor => BuildTarget.StandaloneOSX,
-						RuntimePlatform.LinuxEditor => BuildTarget.StandaloneLinux64,
-						_ => BuildTarget.NoTarget
-					});
-			else {
-				BuildAssetBundlesForPlatform(BuildTarget.StandaloneLinux64);
-				BuildAssetBundlesForPlatform(BuildTarget.StandaloneWindows64);
-				BuildAssetBundlesForPlatform(BuildTarget.StandaloneOSX);
-			}
+		private void BuildAssetBundlesForCurrentPlatform() {
+			BuildAssetBundlesForPlatform(
+				Application.platform switch {
+					RuntimePlatform.WindowsEditor => BuildTarget.StandaloneWindows64,
+					RuntimePlatform.OSXEditor => BuildTarget.StandaloneOSX,
+					RuntimePlatform.LinuxEditor => BuildTarget.StandaloneLinux64,
+					_ => BuildTarget.NoTarget
+				});
+		}
+
+		private void BuildAssetBundles(HashSet<BuildTarget> buildTargets) {
+			foreach (var target in buildTargets)
+				BuildAssetBundlesForPlatform(target);
+		}
+
+		private void BuildAllAssetBundles() {
+			BuildAssetBundlesForPlatform(BuildTarget.StandaloneLinux64);
+			BuildAssetBundlesForPlatform(BuildTarget.StandaloneWindows64);
+			BuildAssetBundlesForPlatform(BuildTarget.StandaloneOSX);
 		}
 
 		private void BuildAssetBundlesForPlatform(BuildTarget target) {
