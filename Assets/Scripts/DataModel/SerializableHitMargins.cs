@@ -21,9 +21,14 @@ namespace CourseMod.DataModel {
 
 		public int TotalCount;
 
-		public bool NonPerfectsDontExist() => TooLate == 0 && VeryLate == 0 && LatePerfect == 0 &&
+		private bool NonPerfectsDontExist() => TooLate == 0 && VeryLate == 0 && LatePerfect == 0 &&
 		                                      EarlyPerfect == 0 && VeryEarly == 0 && TooEarly == 0 &&
 		                                      Miss == 0 && Overload == 0;
+
+		public bool IsPurePerfect(int totalFloors) =>
+			NonPerfectsDontExist() &&
+			totalFloors == TotalCount &&
+			TotalCount != 0;
 
 		[JsonIgnore] public static SerializableHitMargins Default => FromHitMarginsCount(Array.Empty<int>(), 0);
 

@@ -522,7 +522,7 @@ namespace CourseMod.Components.Scenes {
 
 			endMenuTotalAccuracyText.text = totalAccuracy
 				.ToAccuracyNotation()
-				.GoldTextIfTrue(totalMargins.Auto + totalMargins.Perfect == totalFloors && totalFloors != 0);
+				.GoldTextIfTrue(totalMargins.IsPurePerfect(totalFloors));
 
 			endMenuPersonalBestText.SetActive(personalBest);
 			endMenuHitMarginDisplay.UpdateDisplay(totalMargins);

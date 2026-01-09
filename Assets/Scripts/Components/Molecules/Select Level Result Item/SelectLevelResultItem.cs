@@ -34,8 +34,7 @@ namespace CourseMod.Components.Molecules.SelectLevelResultItem {
 			accuracy.gameObject.SetActive(true);
 			accuracy.text = record.XAccuracy
 				.ToAccuracyNotation()
-				.GoldTextIfTrue(record.HitMargins.NonPerfectsDontExist() &&
-				                record.TotalFloors == record.HitMargins.TotalCount);
+				.GoldTextIfTrue(record.HitMargins.IsPurePerfect(record.TotalFloors));
 
 			hitMarginDisplay.UpdateDisplay(record.HitMargins);
 			hitMarginDisplay.transform.parent.gameObject.SetActive(true);
