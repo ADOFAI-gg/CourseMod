@@ -588,7 +588,7 @@ namespace CourseMod.Patches {
 				if (secondsSinceWon < 1)
 					return;
 
-				if (!RDInput.mainPress && (secondsSinceWon < 3 && CourseState.LevelIndex != CourseState.TotalLevels - 1))
+				if (!RDInput.mainPress && (secondsSinceWon < 3 || CourseState.LevelIndex == CourseState.TotalLevels - 1))
 					return;
 
 				WonTime = float.PositiveInfinity;
