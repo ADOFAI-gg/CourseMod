@@ -27,7 +27,22 @@ namespace CourseMod.Patches {
 			}
 
 			public static bool PlayingCourse;
-			public static Course? SelectedCourse;
+			
+			private static Course? _selectedCourse;
+			public static Course? SelectedCourse {
+				get => _selectedCourse;
+				set {
+					_selectedCourse = value;
+
+					if (value is { } course) {
+						TotalLevels = course.Levels.Count;
+					} else {
+						TotalLevels = 0;
+					}
+				}
+			}
+
+			public static int TotalLevels;
 
 			public static int LevelIndex;
 			public static int PlayStartedLevelIndex;
@@ -52,6 +67,7 @@ namespace CourseMod.Patches {
 				TerminateCourse();
 
 				SelectedCourse = null;
+				TotalLevels = 0;
 
 				ResetProgress();
 			}
@@ -572,7 +588,7 @@ namespace CourseMod.Patches {
 				if (secondsSinceWon < 1)
 					return;
 
-				if (!RDInput.mainPress && secondsSinceWon < 3)
+				if (!RDInput.mainPress && (secondsSinceWon < 3 && CourseState.LevelIndex != CourseState.TotalLevels - 1))
 					return;
 
 				WonTime = float.PositiveInfinity;
