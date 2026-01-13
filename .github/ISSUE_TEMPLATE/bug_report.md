@@ -23,16 +23,25 @@ Steps to reproduce the behavior:
 ## Bug Context
 
 **Operating System**
+
 *Name of the operating system used, such as Windows 11*
+<br/><br/>
 
 **UnityModManager Version**
+
 *Which version of UnityModManager did you use?*
+<br/><br/>
 
 **ADOFAI Version**
+
 *Which version of ADOFAI did you use?*
+<br/><br/>
 
 **Mod Version**
+
 *Which version of Course Mod did you use?*
+<br/><br/>
 
 **Logs**
+
 *No logs provided*
