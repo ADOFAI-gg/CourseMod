@@ -520,7 +520,7 @@ namespace CourseMod.Components.Scenes {
 
 			return;
 
-			string ReplaceSlash(string path) => path.Replace('\\', '/');
+			string ReplaceSlash([CanBeNull] string path) => path?.Replace('\\', '/');
 		}
 
 		public void Export() {
