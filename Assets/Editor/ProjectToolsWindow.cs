@@ -622,13 +622,18 @@ namespace CourseMod.Editor {
 
 					GUILayout.Label($"Cached Builds: {_buildCount} (Using <b>{_buildSizeString}</b> of Storage)");
 					ExtendedGUILayout.SetGUIBackgroundColor(Color.red);
-					
-					var autoDeleteBuilds =
-						GUILayout.Toggle(config.automaticallyDeleteBuilds, "Automatically Delete Builds");
 
-					if (autoDeleteBuilds != config.automaticallyDeleteBuilds) {
-						config.automaticallyDeleteBuilds = autoDeleteBuilds;
-						modified = true;
+					using (new GUILayout.HorizontalScope()) {
+						// checkbox position misaligns for some reason?? so we have to manually add the space
+						GUILayout.Space(4);
+						
+						var autoDeleteBuilds =
+							GUILayout.Toggle(config.automaticallyDeleteBuilds, "Automatically Delete Builds");
+
+						if (autoDeleteBuilds != config.automaticallyDeleteBuilds) {
+							config.automaticallyDeleteBuilds = autoDeleteBuilds;
+							modified = true;
+						}
 					}
 
 					if (isBuilding) GUI.enabled = false;
