@@ -976,7 +976,7 @@ namespace CourseMod.Components.Scenes {
 			LogTools.Log($"course levels: {course.Levels.Count}");
 
 			SceneManager.LoadScene(SCENE_NAME, LoadSceneMode.Single);
-			SceneManager.LoadScene("scnGame", LoadSceneMode.Additive);
+			SceneManager.LoadScene(GCNS.sceneGame, LoadSceneMode.Additive);
 
 			GameplayPatches.CourseState.PlayingCourse = true;
 			GameplayPatches.CourseState.ResetProgress();
