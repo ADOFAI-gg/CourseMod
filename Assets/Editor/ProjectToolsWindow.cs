@@ -17,7 +17,7 @@ namespace CourseMod.Editor {
 			Test
 		}
 
-		private const string RepositoryLink = "https://src.afg.ink/modding/course-mod"; // disabled if null
+		private const string RepositoryLink = "https://github.com/ADOFAI-gg/CourseMod"; // disabled if null
 		private const string I18NLink = null; // disabled if null
 
 		public static string BuildDirectory => Path.Combine(Directory.GetCurrentDirectory(), "Builds");
