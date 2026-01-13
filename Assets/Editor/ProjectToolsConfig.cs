@@ -44,7 +44,7 @@ namespace CourseMod.Editor {
 		public HashSet<BuildTarget> BuildPlatforms {
 			get {
 				if (_buildTargets == null)
-					return _buildTargets ??= serializedBuildPlatforms.ToHashSet();
+					return _buildTargets ??= serializedBuildPlatforms?.ToHashSet() ?? new();
 
 				return _buildTargets;
 			}
