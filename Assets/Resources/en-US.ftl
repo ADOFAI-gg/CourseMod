@@ -29,7 +29,7 @@ general-fail-Life = Life Challenge Failed!
 #
 
 select-select-course = Select a course
-select-or-import-course = Or you could add some course by clicking “Import Course”.
+select-or-import-course = Or you could add some courses by clicking “Import Course”.
 select-music-by = Music by
 select-musics-by = Musics by
 select-level-by = Level by
