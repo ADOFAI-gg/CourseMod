@@ -272,6 +272,9 @@ namespace CourseMod.Patches {
 				yield return null;
 				yield return null;
 				scnGame.instance.LoadAndPlayLevel(GCS.customLevelPaths[0]); // the rest are done with patches
+				
+				CourseState.WonState = false;
+				CourseState.FailState = false;
 			}
 		}
 
