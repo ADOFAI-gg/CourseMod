@@ -127,6 +127,7 @@ editor-close = Close
 editor-close-save = Save and Close
 editor-close-discard = Discard and Close
 editor-continue = Save and Continue
+editor-continue-discard = Discard and Continue
 editor-delete-continue = Delete and Continue
 editor-cancel = Cancel
 

@@ -127,6 +127,7 @@ editor-close = 닫기
 editor-close-save = 저장하고 나가기
 editor-close-discard = 저장하지 않고 나가기
 editor-continue = 저장하고 계속
+editor-continue-discard = 저장하지 않고 계속
 editor-delete-continue = 삭제하고 계속
 editor-cancel = 취소
 
