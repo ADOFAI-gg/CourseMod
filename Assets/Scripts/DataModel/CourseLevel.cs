@@ -38,9 +38,15 @@ namespace CourseMod.DataModel {
 		}
 
 
-		public static CourseLevel FromPath(string path, string relativeTo) {
+		public static CourseLevel FromPath(string path, [CanBeNull] string relativeTo) {
+			var relativePath = path;
+
+			if (!string.IsNullOrEmpty(relativeTo)) {
+				relativePath = System.IO.Path.GetRelativePath(relativeTo, path);
+			}
+
 			var result = new CourseLevel {
-				Path = System.IO.Path.GetRelativePath(relativeTo, path), AbsolutePath = path
+				Path = relativePath, AbsolutePath = path
 			};
 
 			return result;

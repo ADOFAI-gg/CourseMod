@@ -323,16 +323,24 @@ namespace CourseMod.Components.Scenes {
 		}
 
 		private void AddAndChangeSelectLevel() {
-			string levelPath = FileDialogTools.OpenLevelFileDialog();
+			var levelPath = FileDialogTools.OpenLevelFileDialog();
 			if (!File.Exists(levelPath))
 				return;
 
 			FileTools.CopyLevelToCourseDir(LastOpenedCoursePath, levelPath);
 
 			levelList.GetItems().ForEach(e => e.Selected = false);
-			EditorLevelItem item = levelList.AddLevel(CourseLevel.FromPath(levelPath, CurrentCourse!.Value.FilePath));
+
+			var coursePath = CurrentCourse!.Value.FilePath;
+			Assert.False(string.IsNullOrEmpty(coursePath), "Current course path is invalid");
+
+			var level = CourseLevel.FromPath(levelPath, Path.GetDirectoryName(coursePath));
+			var item = levelList.AddLevel(level);
 			item.Selected = true;
 			SetDirty(true);
+
+			LogTools.Log($"Created level entry {item.OrderNumber}: {levelPath}");
+			LogTools.Log($"Relative path: {level.Path}");
 		}
 
 		public void SetDirty(bool isDirty) {

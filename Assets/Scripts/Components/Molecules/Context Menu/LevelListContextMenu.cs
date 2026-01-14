@@ -396,7 +396,11 @@ namespace CourseMod.Components.Molecules.ContextMenu {
 					string dstPath = FileTools.CopyLevelToCourseDir(Handler.LastOpenedCoursePath, levelPath);
 					levelData.AbsolutePath = dstPath;
 					item.levelData = levelData;
-					item.FillLevelInfo(CourseLevel.FromPath(dstPath, CourseEditorScene.CurrentCourse!.Value.FilePath));
+
+					var coursePath = CourseEditorScene.CurrentCourse!.Value.FilePath;
+					Assert.False(string.IsNullOrEmpty(coursePath), "Current course path is invalid");
+
+					item.FillLevelInfo(CourseLevel.FromPath(dstPath, Path.GetDirectoryName(coursePath)));
 					item.ReloadChips();
 				}
 
