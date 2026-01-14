@@ -179,13 +179,7 @@ namespace CourseMod.Editor {
 		private void WriteModInfo() => ModInfo.Info.WriteToFile(Path.Combine(_buildPath, "Info.json"));
 
 		private void BuildAssetBundlesForCurrentPlatform() {
-			BuildAssetBundlesForPlatform(
-				Application.platform switch {
-					RuntimePlatform.WindowsEditor => BuildTarget.StandaloneWindows64,
-					RuntimePlatform.OSXEditor => BuildTarget.StandaloneOSX,
-					RuntimePlatform.LinuxEditor => BuildTarget.StandaloneLinux64,
-					_ => BuildTarget.NoTarget
-				});
+			BuildAssetBundlesForPlatform(PlatformToBuildTarget(Application.platform));
 		}
 
 		private void BuildAssetBundles(HashSet<BuildTarget> buildTargets) {
@@ -225,5 +219,13 @@ namespace CourseMod.Editor {
 				File.Copy(source, destination, true);
 			}
 		}
+
+		public static BuildTarget PlatformToBuildTarget(RuntimePlatform runtimePlatform) =>
+			runtimePlatform switch {
+				RuntimePlatform.WindowsEditor => BuildTarget.StandaloneWindows64,
+				RuntimePlatform.OSXEditor => BuildTarget.StandaloneOSX,
+				RuntimePlatform.LinuxEditor => BuildTarget.StandaloneLinux64,
+				_ => BuildTarget.NoTarget
+			};
 	}
 }

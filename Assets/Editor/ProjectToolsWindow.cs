@@ -431,9 +431,11 @@ namespace CourseMod.Editor {
 							config.buildEveryPlatform = buildEveryPlatform;
 							modified = true;
 						}
+						
+						GUILayout.Space(8);
 
 						if (!buildEveryPlatform) {
-							using (new ExtendedGUILayout.IndentScope()) {
+							using (new ExtendedGUILayout.IndentScope(20)) {
 								var buildTargets = config.BuildPlatforms;
 								
 								using (new GUILayout.HorizontalScope()) {
@@ -455,12 +457,7 @@ namespace CourseMod.Editor {
 											? Color.green
 											: Color.gray;
 
-										var buildTargetString = b switch {
-											BuildTarget.StandaloneWindows64 => "Windows",
-											BuildTarget.StandaloneOSX => "MacOS",
-											BuildTarget.StandaloneLinux64 => "Linux",
-											_ => $"<Undefined> {b}"
-										};
+										var buildTargetString = GetBuildTargetString(b);
 
 										if (isAssigned)
 											buildTargetString = $"<b>{buildTargetString}</b>";
@@ -478,11 +475,18 @@ namespace CourseMod.Editor {
 								}
 
 								var buildTargetMessage = buildTargets.Count == 0
-									? "Because no build targets are selected"
-									: "";
+									? $"Only building <b>{GetBuildTargetString(ModBuilder.PlatformToBuildTarget(Application.platform))}</b> because no build targets are selected"
+									: $"Building <b>{string.Join(", ", buildTargets.Select(GetBuildTargetString))}</b>";
 
 								GUILayout.Label($"<color=#999999>{buildTargetMessage}</color>");
 							}
+							
+							string GetBuildTargetString(BuildTarget b) => b switch {
+								BuildTarget.StandaloneWindows64 => "Windows",
+								BuildTarget.StandaloneOSX => "MacOS",
+								BuildTarget.StandaloneLinux64 => "Linux",
+								_ => $"<Undefined> {b}"
+							};
 						}
 					}
 
