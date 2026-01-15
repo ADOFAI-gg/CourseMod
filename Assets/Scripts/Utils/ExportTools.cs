@@ -128,7 +128,7 @@ namespace CourseMod.Utils {
 				foreach(var file in GetLevelFiles(level.AbsolutePath)) 
 					files.Add(file);
 
-			using var stream = new FileStream(Path.Combine(courseDirectory, filename + ".zip"), FileMode.Create);
+			using var stream = new FileStream(Path.Combine(courseDirectory, filename), FileMode.Create);
 			using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
 
 			foreach (var file in files)

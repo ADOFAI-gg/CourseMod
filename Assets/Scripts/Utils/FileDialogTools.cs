@@ -87,6 +87,11 @@ namespace CourseMod.Utils {
 				initialPath ?? "",
 				initialPath.IsNullOrEmpty() ? "" : Path.GetFileName(initialPath),
 				_courseFilter);
+			
+			if (!result.EndsWith(".course")) {
+				result += ".course";
+			}
+			
 			return result;
 		}
 
@@ -97,6 +102,11 @@ namespace CourseMod.Utils {
 				initialPath ?? "",
 				initialPath.IsNullOrEmpty() ? "" : Path.GetFileName(initialPath),
 				_zipFilter);
+
+			if (!result.EndsWith(".zip")) {
+				result += ".zip";
+			}
+			
 			return result;
 		}
 
