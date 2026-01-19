@@ -8,6 +8,7 @@ using System.Reflection.Emit;
 using CourseMod.Components.Scenes;
 using CourseMod.DataModel;
 using CourseMod.Utils;
+using DG.Tweening;
 using HarmonyLib;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -246,6 +247,33 @@ namespace CourseMod.Patches {
 			}
 		}
 
+		// TODO this patch is advised to be reworked after r135
+		[HarmonyPatch(typeof(PlanetarySystem), "Die")]
+		private static class ControllerFail2StateChangeActionOverrider {
+			public static Tween ExplodeTween;
+
+			private static readonly MethodInfo SkipTarget = AccessTools.Method(typeof(DOVirtual), "DelayedCall");
+
+			private static void DoThisInstead(float delay, TweenCallback callback, bool ignoreTimeScale = true) {
+				if (CourseState.PlayingCourse)
+					return;
+				
+				ExplodeTween = DOVirtual.DelayedCall(delay, callback, ignoreTimeScale);
+			}
+			
+			private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
+				foreach (var instruction in instructions) {
+					if (instruction.Calls(SkipTarget)) {
+						yield return new CodeInstruction(OpCodes.Call,
+							AccessTools.Method(typeof(OverrideLoadAndPlayLevel), nameof(DoThisInstead)));
+						continue;
+					}
+
+					yield return instruction;
+				}
+			}
+		}
+
 		[HarmonyPatch(typeof(scnGame), "Awake")]
 		public static class SetupGameSceneParameters {
 			private static void Postfix() {
@@ -274,6 +302,8 @@ namespace CourseMod.Patches {
 			public static void LoadLevel(string levelAbsPath, [CanBeNull] Action callback) {
 				LogTools.Log($"Loading level at '{levelAbsPath}'");
 				StartLevelAfterTwoFrames.ConsumableAction = callback;
+				
+				ControllerFail2StateChangeActionOverrider.ExplodeTween?.Kill();
 
 				var game = scnGame.instance;
 				game.ResetScene(true);
