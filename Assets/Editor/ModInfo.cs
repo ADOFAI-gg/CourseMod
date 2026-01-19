@@ -6,7 +6,7 @@ using Unity.Plastic.Newtonsoft.Json;
 // ReSharper disable InconsistentNaming
 
 namespace CourseMod.Editor {
-	[JsonObject]
+	[JsonObject(MemberSerialization.OptIn)]
 	public class ModInfo : ScriptableObject {
 		private static ModInfo _info;
 
@@ -24,22 +24,28 @@ namespace CourseMod.Editor {
 			}
 		}
 
-		[Header("Mod Entry")] public string AssemblyName;
-		public string EntryMethod;
+#pragma warning disable format // @formatter:off
+		[Header("Mod Entry")]
+		[JsonProperty] public string AssemblyName;
+		[JsonProperty] public string EntryMethod;
 
-		[Header("Metadata")] public string Id;
-		public string DisplayName;
-		public string Author;
-		public string Version;
-		public string HomePage;
-		public string Repository;
-		public string ContentType;
+		[Header("Metadata")]
+		[JsonProperty] public string Id;
+		[JsonProperty] public string DisplayName;
+		[JsonProperty] public string Author;
+		[JsonProperty] public string Version;
+		[JsonProperty] public string HomePage;
+		[JsonProperty] public string Repository;
+		[JsonProperty] public string ContentType;
 
-		[Header("Version Dependency")] public string ManagerVersion;
-		public string GameVersion;
+		[Header("Version Dependency")]
+		[JsonProperty] public string ManagerVersion;
+		[JsonProperty] public string GameVersion;
 
-		[Header("Dependency")] public string[] Requirements;
-		public string[] LoadAfter;
+		[Header("Dependency")]
+		[JsonProperty] public string[] Requirements;
+		[JsonProperty] public string[] LoadAfter;
+#pragma warning restore format // @formatter:on
 
 		public void WriteToFile(string path) {
 			var json = JsonConvert.SerializeObject(this, Formatting.Indented);
