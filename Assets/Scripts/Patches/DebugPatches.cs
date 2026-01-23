@@ -1,10 +1,13 @@
 #if DEBUG
 
+using CourseMod.DataModel;
 using CourseMod.Utils;
 using HarmonyLib;
 
 namespace CourseMod.Patches {
 	internal static class DebugPatches {
+		private static DebugSettings DebugSettings => ModDataStorage.PlayerSettings.DebugSettings;
+		
 		[HarmonyPatch(typeof(scnGame), "LoadLevel")]
 		private static class ShowChecksumInfo {
 			private static void Postfix(scnGame __instance) {

@@ -28,8 +28,9 @@ namespace CourseMod.Patches {
 			}
 
 			public static bool PlayingCourse;
-			
+
 			private static Course? _selectedCourse;
+
 			public static Course? SelectedCourse {
 				get => _selectedCourse;
 				set {
@@ -237,9 +238,9 @@ namespace CourseMod.Patches {
 				return false;
 			}
 		}
-		
+
 		[HarmonyPatch(typeof(scrUIController), "Awake")]
-		public static class OverrideDifficulty {
+		private static class OverrideDifficulty {
 			private static void Postfix() {
 				if (!CourseState.PlayingCourse) return;
 
@@ -254,18 +255,19 @@ namespace CourseMod.Patches {
 
 			private static readonly MethodInfo SkipTarget = AccessTools.Method(typeof(DOVirtual), "DelayedCall");
 
-			private static void DoThisInstead(float delay, TweenCallback callback, bool ignoreTimeScale = true) {
+			private static Tween DoThisInstead(float delay, TweenCallback callback, bool ignoreTimeScale = true) {
 				if (CourseState.PlayingCourse)
-					return;
-				
-				ExplodeTween = DOVirtual.DelayedCall(delay, callback, ignoreTimeScale);
+					return null;
+
+				return ExplodeTween = DOVirtual.DelayedCall(delay, callback, ignoreTimeScale);
 			}
-			
+
 			private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
 				foreach (var instruction in instructions) {
 					if (instruction.Calls(SkipTarget)) {
 						yield return new CodeInstruction(OpCodes.Call,
-							AccessTools.Method(typeof(OverrideLoadAndPlayLevel), nameof(DoThisInstead)));
+							AccessTools.Method(typeof(ControllerFail2StateChangeActionOverrider),
+								nameof(DoThisInstead)));
 						continue;
 					}
 
@@ -302,7 +304,7 @@ namespace CourseMod.Patches {
 			public static void LoadLevel(string levelAbsPath, [CanBeNull] Action callback) {
 				LogTools.Log($"Loading level at '{levelAbsPath}'");
 				StartLevelAfterTwoFrames.ConsumableAction = callback;
-				
+
 				ControllerFail2StateChangeActionOverrider.ExplodeTween?.Kill();
 
 				var game = scnGame.instance;
@@ -318,7 +320,7 @@ namespace CourseMod.Patches {
 				yield return null;
 				yield return null;
 				scnGame.instance.LoadAndPlayLevel(GCS.customLevelPaths[0]); // the rest are done with patches
-				
+
 				CourseState.WonState = false;
 				CourseState.FailState = false;
 			}
@@ -332,10 +334,27 @@ namespace CourseMod.Patches {
 
 				StartLevelAfterTwoFrames.CalledFrames = 0;
 
+				RevivePlanets();
+
 				PauseControl.SetPaused(scrController.instance,
 					false); // maybe there's a case where controller is disabled?
 				LogTools.Log("CalledFrames has reset!");
 				return false;
+			}
+
+			private static void RevivePlanets() {
+				var controller = scrController.instance;
+				var system = controller.planetarySystem;
+
+				for (var i = 0; i < system.planetsUsed && i < system.allPlanets.Count; i++) {
+					LogTools.Log($"check planet {i}");
+
+					var planet = system.allPlanets[i];
+					if (planet.dead) {
+						LogTools.Log($"planet {i} rewind");
+						planet.Rewind();
+					}
+				}
 			}
 		}
 
@@ -560,7 +579,7 @@ namespace CourseMod.Patches {
 		}
 
 		[HarmonyPatch(typeof(scrController), "Fail2_Update")]
-		private static class CourseFailUpdate {
+		public static class CourseFailUpdate {
 			public static bool DisplayedEndScreen;
 			public static string DesiredFailText;
 
@@ -618,7 +637,8 @@ namespace CourseMod.Patches {
 				if (secondsSinceWon < 1)
 					return;
 
-				if (!RDInput.mainPress && (secondsSinceWon < 3 || CourseState.LevelIndex == CourseState.TotalLevels - 1))
+				if (!RDInput.mainPress &&
+				    (secondsSinceWon < 3 || CourseState.LevelIndex == CourseState.TotalLevels - 1))
 					return;
 
 				WonTime = float.PositiveInfinity;

@@ -823,7 +823,7 @@ namespace CourseMod.Components.Scenes {
 			}, true);
 		}
 
-		private void RetryCourse() {
+		public void RetryCourse() {
 			CloseAllAndProceed(() => {
 				GameplayPatches.CourseState.ResetProgress();
 				ResetConstraintChips();
