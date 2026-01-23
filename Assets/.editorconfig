@@ -196,7 +196,8 @@ csharp_preserve_single_line_statements = true
 
 [*/Patches/**/*.cs]
 dotnet_diagnostic.IDE0051.severity = none
-resharper_unused_type_global_highlighting=none
-resharper_unused_type_local_highlighting=none
-resharper_unused_member_local_highlighting=none
-resharper_inconsistent_naming_highlighting=none
+resharper_unused_type_global_highlighting = none
+resharper_unused_type_local_highlighting = none
+resharper_unused_member_local_highlighting = none
+resharper_inconsistent_naming_highlighting = none
+resharper_redundant_assignment_highlighting = none
