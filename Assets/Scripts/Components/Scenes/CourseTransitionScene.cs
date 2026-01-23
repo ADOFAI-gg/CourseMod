@@ -113,6 +113,7 @@ namespace CourseMod.Components.Scenes {
 		private double _countdownValue;
 		private bool _performCountdown;
 		private bool _allowCountdownSkip;
+		private bool _allowRetryKeyPresses;
 		private bool _displayingStartScreen;
 
 		private Tween _backgroundTween;
@@ -178,7 +179,8 @@ namespace CourseMod.Components.Scenes {
 					return;
 				}
 
-				if (Input.GetKeyDown(KeyCode.R)) {
+				if (_allowRetryKeyPresses && Input.GetKeyDown(KeyCode.R)) {
+					_allowRetryKeyPresses = false;
 					RetryCourse();
 					return;
 				}
@@ -823,12 +825,13 @@ namespace CourseMod.Components.Scenes {
 			}, true);
 		}
 
-		public void RetryCourse() {
+		private void RetryCourse() {
 			CloseAllAndProceed(() => {
 				GameplayPatches.CourseState.ResetProgress();
 				ResetConstraintChips();
 				LoadLevel();
 				ProceedToLevel();
+				_allowRetryKeyPresses = true;
 			});
 		}
 

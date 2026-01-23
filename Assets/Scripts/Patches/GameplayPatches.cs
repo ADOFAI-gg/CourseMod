@@ -579,7 +579,7 @@ namespace CourseMod.Patches {
 		}
 
 		[HarmonyPatch(typeof(scrController), "Fail2_Update")]
-		public static class CourseFailUpdate {
+		private static class CourseFailUpdate {
 			public static bool DisplayedEndScreen;
 			public static string DesiredFailText;
 
@@ -591,9 +591,9 @@ namespace CourseMod.Patches {
 				return false;
 			}
 
-			private static void Update(scrController controller) {
+			public static void Update(scrController controller) {
 				if (!DesiredFailText.IsNullOrEmpty()) {
-					var targetText = controller.txtCongrats;
+					var targetText = controller.txtTryCalibrating;
 
 					targetText.gameObject.SetActive(true);
 					targetText.text = DesiredFailText;
@@ -612,6 +612,19 @@ namespace CourseMod.Patches {
 				CourseState.StoreRecord();
 				Instance.ShowEndScreen();
 				DisplayedEndScreen = true;
+			}
+		}
+
+		[HarmonyPatch(typeof(scrController), "Update")]
+		private static class CourseFailBackupUpdate {
+			private static void Prefix(scrController __instance) {
+				if (!CourseState.PlayingCourse)
+					return;
+
+				if (__instance.currentState != States.Fail)
+					return;
+				
+				CourseFailUpdate.Update(__instance);
 			}
 		}
 
@@ -692,7 +705,7 @@ namespace CourseMod.Patches {
 		// TODO this is probably redundant
 		[HarmonyPatch(typeof(scrController), "ResetCustomLevel")]
 		private static class CheckRestart {
-			private static bool Prefix(scrController __instance, ref IEnumerator __result) {
+			private static bool Prefix(ref IEnumerator __result) {
 				if (!CourseState.PlayingCourse)
 					return true;
 
