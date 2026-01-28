@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using CourseMod.Components.Molecules.SelectLevelItem;
 using CourseMod.DataModel;
@@ -19,10 +20,14 @@ namespace CourseMod.Components.Scenes {
 		private readonly List<SetupOtherCourseDataTask> _pendingTasks = new();
 
 		private AsyncInstantiateOperation<SelectLevelItem> _instantiateOperation;
+		private CancellationTokenSource _taskCancellationTokenSource;
+		private CancellationToken _taskCancellationToken;
 
 		private void Awake() {
 			CourseCollection.Reset();
-			Task.Run(ReadCourseTask);
+			_taskCancellationTokenSource = new CancellationTokenSource();
+			_taskCancellationToken = _taskCancellationTokenSource.Token;
+			Task.Run(ReadCourseTask, _taskCancellationToken);
 		}
 
 		public async void ReadCourseTask() {
@@ -92,13 +97,17 @@ namespace CourseMod.Components.Scenes {
 			if (_currentLoadedIndex == _totalCourses && _pendingTasks.Count == 0) DestroyImmediate(this);
 		}
 
+		private void OnDestroy() {
+			_taskCancellationTokenSource.Cancel();
+		}
+
 		public void LoadAfter(ref Course course) {
 			_requireReplyCourses.Enqueue(course.Id);
 			_currentLoadedIndex++;
 
 			SetupOtherCourseDataTask task = new(this, course.Id);
-			Task.Run(task.SetupPlayRecord);
-			Task.Run(task.SetupLevelMetas);
+			Task.Run(task.SetupPlayRecord, _taskCancellationToken);
+			Task.Run(task.SetupLevelMetas, _taskCancellationToken);
 			_pendingTasks.Add(task);
 
 			foreach (CourseLevel courseLevel in course.Levels)
@@ -122,6 +131,10 @@ namespace CourseMod.Components.Scenes {
 					if (!CourseCollection.CourseRecords.ContainsKey(CourseId)) {
 						Course course = CourseCollection.Courses[CourseId];
 						CoursePlayRecord record = course.GetPlayRecord();
+						if (_instance._taskCancellationToken.IsCancellationRequested) {
+							LogTools.Log("Task cancelled, aborting play record load.");
+							return;
+						}
 						lock (_instance) CourseCollection.CourseRecords[CourseId] = record;
 					}
 
@@ -141,6 +154,10 @@ namespace CourseMod.Components.Scenes {
 							try {
 								LogTools.Log("Loading level meta for level at path " + level.Path);
 								LevelMeta meta = new(level.AbsolutePath);
+								if (_instance._taskCancellationToken.IsCancellationRequested) {
+									LogTools.Log("Task cancelled, aborting level meta load.");
+									return;
+								}
 								CourseCollection.LevelMetas[level.Path] = meta;
 							} catch (Exception e) {
 								LogTools.LogException($"Error loading level meta for level at path {level.Path}", e);
