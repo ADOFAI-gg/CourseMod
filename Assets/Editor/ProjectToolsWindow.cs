@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +9,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 namespace CourseMod.Editor {
 	public class ProjectToolsWindow : EditorWindow {
@@ -739,6 +741,14 @@ namespace CourseMod.Editor {
 								OpenScriptInEditor(Path.Combine("Assets/Resources", fluentFile + ".ftl"));
 					}
 
+					GUILayout.Space(24);
+
+					if (GUILayout.Button("Open Terminal in Project Directory", GUILayout.Height(32))) {
+						OpenTerminal(Application.dataPath);
+					}
+
+					GUILayout.Space(8);
+
 					ExtendedGUILayout.SectionTitle("Scenes", bottomMargin: 0, bottomLineMargin: 4);
 					ExtendedGUILayout.SetGUIBackgroundColor(OpenAssetColor);
 
@@ -802,6 +812,17 @@ namespace CourseMod.Editor {
 
 		private static void OpenScriptInEditor(string path, int? line = null) {
 			UnityEditorInternal.InternalEditorUtility.OpenFileAtLineExternal(path, line ?? 1);
+		}
+
+		private static void OpenTerminal(string path) {
+			var process = new Process();
+
+			#if UNITY_EDITOR_LINUX
+			process.StartInfo.FileName = "konsole";
+			process.StartInfo.Arguments = $"--workdir \"{path}\"";
+			#endif
+
+			process.Start();
 		}
 	}
 }
