@@ -33,7 +33,7 @@ namespace CourseMod.DataModel {
 		}
 
 		[CanBeNull]
-		public CoursePlayRecord GetPlayRecord() {
+		public CoursePlayRecord? GetPlayRecord() {
 			if (CourseCollection.CourseRecords.TryGetValue(Id, out var record))
 				return record;
 			var recordPath = GetPlayRecordPath();
@@ -41,7 +41,7 @@ namespace CourseMod.DataModel {
 			if (!File.Exists(recordPath))
 				return null;
 
-			return JsonConvert.DeserializeObject<CoursePlayRecord>(File.ReadAllText(recordPath));
+			return JsonConvert.DeserializeObject<CoursePlayRecord?>(File.ReadAllText(recordPath));
 		}
 
 		public string GetPlayRecordPath() {
@@ -51,6 +51,11 @@ namespace CourseMod.DataModel {
 				Directory.CreateDirectory(recordsPath);
 
 			return Path.Combine(recordsPath, Id);
+		}
+
+		public void SaveRecord(CoursePlayRecord? record) {
+			var json = JsonConvert.SerializeObject(record);
+			File.WriteAllText(GetPlayRecordPath(), json);
 		}
 
 		public string GetDefaultExportFilename() =>

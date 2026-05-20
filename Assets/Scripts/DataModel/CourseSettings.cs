@@ -9,7 +9,7 @@ namespace CourseMod.DataModel {
 
 		public int? CountdownSeconds;
 
-		public double? AccuracyConstraint;
+		public float? AccuracyConstraint;
 		public int? DeathConstraint;
 		public int? LifeConstraint;
 	}

@@ -1,14 +1,15 @@
+using System;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace CourseMod.DataModel {
 	[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
-	public record CoursePlayRecord {
+	public struct CoursePlayRecord : IEquatable<CoursePlayRecord> {
 		public CourseLevelPlayRecord[] Records;
 
 		[JsonIgnore]
-		public double TotalAccuracy => Records.Length == 0
+		public float TotalAccuracy => Records.Length == 0
 			? 0
 			: Records.Sum(record => record.XAccuracy);
 
@@ -17,8 +18,13 @@ namespace CourseMod.DataModel {
 			? new()
 			: Records.Select(r => r.HitMargins).Aggregate((a, b) => a + b);
 
+		[JsonIgnore]
 		public int TotalFloors => Records.Length == 0
 			? 0
 			: Records.Sum(record => record.TotalFloors);
+
+		public bool Equals(CoursePlayRecord other) => Equals(Records, other.Records);
+		public override bool Equals(object obj) => obj is CoursePlayRecord other && Equals(other);
+		public override int GetHashCode() => (Records != null ? Records.GetHashCode() : 0);
 	}
 }

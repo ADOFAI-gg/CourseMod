@@ -571,7 +571,7 @@ namespace CourseMod.Components.Scenes {
 
 			settings.CountdownSeconds = StringTools.GetNullOrParsedInt(countdownSecondsField.inputField.text);
 			settings.AccuracyConstraint =
-				StringTools.GetNullOrParsedDouble(accuracyConstraintField.inputFieldStyle.inputField.text) / 100;
+				StringTools.GetNullOrParsedFloat(accuracyConstraintField.inputFieldStyle.inputField.text) / 100;
 			settings.DeathConstraint =
 				StringTools.GetNullOrParsedInt(deathConstraintField.inputFieldStyle.inputField.text);
 			settings.LifeConstraint =
@@ -667,14 +667,14 @@ namespace CourseMod.Components.Scenes {
 					nameof(courseLevels));
 			}
 
-			Course course = GetCourseWithAssertion();
+			var course = GetCourseWithAssertion();
 			course.Levels = courseLevels;
-			GameplayPatches.CourseState.SelectedCourse = course;
+			
 			DOTween.KillAll();
 #if DEBUG
 			CourseTransitionScene.CourseEnteredSceneName = SCENE_NAME;
 #endif
-			CourseTransitionScene.BeginCourse();
+			CourseTransitionScene.BeginCourse(new(course));
 		}
 	}
 }

@@ -80,11 +80,7 @@ namespace CourseMod.Editor {
 						DeleteBuilds(1);
 
 					if (runApplication) {
-						if (runApplicationThroughSteam) {
-							Process.Start("steam://rungameid/977950");
-						} else {
-							Process.Start(adofaiPath);
-						}
+						RunGameProcess();
 					}
 				});
 		}
@@ -113,6 +109,10 @@ namespace CourseMod.Editor {
 					}
 				}
 			}
+		}
+
+		public void RunGameProcess() {
+			Process.Start(runApplicationThroughSteam ? "steam://rungameid/977950" : adofaiPath);
 		}
 	}
 }

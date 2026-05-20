@@ -47,7 +47,7 @@ namespace CourseMod.Utils {
 		public static string WrapColorTag(this string s, string hex) => s.WrapRichTag("color", $"#{hex}");
 		public static string GoldTextIfTrue(this string s, bool value) => value ? s.WrapColorTag("ffda00") : s;
 
-		public static string ToAccuracyNotation(this double xAcc, bool fullDigits = true) =>
+		public static string ToAccuracyNotation(this float xAcc, bool fullDigits = true) =>
 			xAcc.ToString(fullDigits ? "0.0000%" : "0.####%");
 
 		public static string SanitizeForUI(this string s) {

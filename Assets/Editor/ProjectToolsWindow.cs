@@ -540,12 +540,18 @@ namespace CourseMod.Editor {
 
 						GUILayout.Space(4);
 
-						var runApplication =
-							GUILayout.Toggle(config.runApplication, "run application after building mod");
+						using (new GUILayout.HorizontalScope()) {
+							var runApplication =
+								GUILayout.Toggle(config.runApplication, "run application after building mod");
 
-						if (runApplication != config.runApplication) {
-							config.runApplication = runApplication;
-							modified = true;
+							if (runApplication != config.runApplication) {
+								config.runApplication = runApplication;
+								modified = true;
+							}
+
+							if (GUILayout.Button("Run Application")) {
+								config.RunGameProcess();
+							}
 						}
 
 						GUILayout.Space(4);
@@ -744,8 +750,9 @@ namespace CourseMod.Editor {
 					GUILayout.Space(24);
 
 					if (GUILayout.Button("Open Terminal in Project Directory", GUILayout.Height(32))) {
-						OpenTerminal(Application.dataPath);
+						OpenTerminal(Path.GetDirectoryName(Application.dataPath));
 					}
+					GUILayout.Label("<color=#ffff00><b>⚠️ This feature is not implemented properly for every OS.</b></color>");
 
 					GUILayout.Space(8);
 
@@ -820,6 +827,8 @@ namespace CourseMod.Editor {
 			#if UNITY_EDITOR_LINUX
 			process.StartInfo.FileName = "konsole";
 			process.StartInfo.Arguments = $"--workdir \"{path}\"";
+			#else
+			throw new NotImplementedException();
 			#endif
 
 			process.Start();

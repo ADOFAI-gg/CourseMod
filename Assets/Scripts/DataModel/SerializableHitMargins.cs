@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CourseMod.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -30,9 +31,9 @@ namespace CourseMod.DataModel {
 			totalFloors == TotalCount &&
 			TotalCount != 0;
 
-		[JsonIgnore] public static SerializableHitMargins Default => FromHitMarginsCount(Array.Empty<int>(), 0);
+		[JsonIgnore] public static SerializableHitMargins Default => FromHitMarginsCount(Array.Empty<int>());
 
-		public static SerializableHitMargins FromHitMarginsCount(int[] hitMarginsCount, int totalCount) {
+		public static SerializableHitMargins FromHitMarginsCount(int[] hitMarginsCount) {
 			var result = new SerializableHitMargins();
 
 			HitMarginTools.TryGetHitMarginCount(hitMarginsCount, HitMargin.TooLate, out result.TooLate);
@@ -49,7 +50,7 @@ namespace CourseMod.DataModel {
 			HitMarginTools.TryGetHitMarginCount(hitMarginsCount, HitMargin.FailMiss, out result.Miss);
 			HitMarginTools.TryGetHitMarginCount(hitMarginsCount, HitMargin.FailOverload, out result.Overload);
 
-			result.TotalCount = totalCount;
+			result.TotalCount = hitMarginsCount.Sum();
 
 			return result;
 		}

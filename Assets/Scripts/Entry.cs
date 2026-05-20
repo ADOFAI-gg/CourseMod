@@ -104,9 +104,9 @@ namespace CourseMod {
 					if (!string.IsNullOrEmpty(coursePath) && File.Exists(coursePath)) {
 						LogTools.Log($"Attempting to read {coursePath}");
 
-						GameplayPatches.CourseState.Reset();
-						GameplayPatches.CourseState.SelectedCourse = CourseCollection.ReadSingleCourse(coursePath);
-						CourseTransitionScene.BeginCourse();
+						CourseTransitionScene.BeginCourse(new(CourseCollection.ReadSingleCourse(coursePath)));
+						
+						// TODO close UI altogether
 					}
 				}
 			}

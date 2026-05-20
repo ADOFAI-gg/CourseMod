@@ -17,27 +17,37 @@ namespace CourseMod.Components.Molecules.SelectLevelResultItem {
 		public HitMarginDisplay hitMarginDisplay;
 
 		public void UpdateDisplay(string levelNameValue, int levelNumberValue,
-			[CanBeNull] CourseLevelPlayRecord record) {
+			CourseLevelPlayRecord? record) {
 			levelNumber.text = levelNumberValue.ToString();
 			levelName.text = levelNameValue;
 
 			UpdateDisplay(record);
 		}
 
-		public void UpdateDisplay([CanBeNull] CourseLevelPlayRecord record) {
-			if (record == null) {
-				accuracy.gameObject.SetActive(false);
-				hitMarginDisplay.transform.parent.gameObject.SetActive(false);
-				return;
+		public void UpdateDisplay(CourseLevelPlayRecord? record) {
+			if (record is not { } castedRecord) {
+				goto useDefaultVariant;
 			}
 
-			accuracy.gameObject.SetActive(true);
-			accuracy.text = record.XAccuracy
-				.ToAccuracyNotation()
-				.GoldTextIfTrue(record.HitMargins.IsPurePerfect(record.TotalFloors));
+			if (record.Equals(default(CourseLevelPlayRecord))) {
+				goto useDefaultVariant;
+			}
 
-			hitMarginDisplay.UpdateDisplay(record.HitMargins);
+			// LogTools.Log($"castedRecord = {castedRecord.GetLogString()}");
+
+			accuracy.gameObject.SetActive(true);
+			accuracy.text = castedRecord.XAccuracy
+				.ToAccuracyNotation()
+				.GoldTextIfTrue(castedRecord.HitMargins.IsPurePerfect(castedRecord.TotalFloors));
+
+			hitMarginDisplay.UpdateDisplay(castedRecord.HitMargins);
 			hitMarginDisplay.transform.parent.gameObject.SetActive(true);
+			return;
+			
+			useDefaultVariant:
+			accuracy.gameObject.SetActive(false);
+			hitMarginDisplay.transform.parent.gameObject.SetActive(false);
+			return;
 		}
 
 		public void UpdateEtc(int count) {

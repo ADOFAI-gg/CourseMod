@@ -13,6 +13,7 @@ using CourseMod.Components.Molecules.SelectLevelItem;
 using CourseMod.Components.Molecules.SelectLevelResultItem;
 using CourseMod.DataModel;
 using CourseMod.Patches;
+using CourseMod.Player;
 using CourseMod.Utils;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -113,12 +114,8 @@ namespace CourseMod.Components.Scenes {
 			playButton.button.onClick.AddListener(() => {
 				if (!ChosenItem) return;
 
-				GameplayPatches.CourseState.SelectedCourse = ChosenItem.Course;
-
-#if DEBUG
+				CourseTransitionScene.BeginCourse(new CoursePlayer(ChosenItem.Course));
 				CourseTransitionScene.CourseEnteredSceneName = SCENE_NAME;
-#endif
-				CourseTransitionScene.BeginCourse();
 			});
 
 			fullCreditsToggleSpoilers.button.onClick.AddListener(FullCreditsPopupSpoilersToggle);
@@ -286,7 +283,7 @@ namespace CourseMod.Components.Scenes {
 			if (ChosenItem.Course.GetPlayRecord() is { } playRecord) {
 				var levels = ChosenItem.Course.Levels;
 				for (var i = 0; i < levels.Count; i++) {
-					var record = playRecord.Records.Length > i ? playRecord.Records[i] : null;
+					CourseLevelPlayRecord? record = playRecord.Records.Length > i ? playRecord.Records[i] : null;
 					var resultItem = Instantiate(resultItemPrefab, resultsContainer);
 					resultItem.UpdateDisplay(levels[i].LevelMeta?.Song, i + 1, record);
 					ResultItems.Add(resultItem);

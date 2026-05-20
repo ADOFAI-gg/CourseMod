@@ -10,9 +10,11 @@ using CourseMod.Components.Molecules.SelectLevelResultItem;
 using CourseMod.DataModel;
 using CourseMod.Exceptions;
 using CourseMod.Patches;
+using CourseMod.Player;
 using CourseMod.Utils;
 using DG.Tweening;
 using JetBrains.Annotations;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -129,16 +131,86 @@ namespace CourseMod.Components.Scenes {
 		private bool _leavingScene;
 		private bool _displayingEndScreen;
 
+		private int _lastDeathsLeft;
+		private int _lastLivesLeft;
+
+		private readonly List<IDisposable> _disposables = new();
+
+		private CourseResult? _lastCourseResult = null;
+
 		private float ContentDisplayTime { get; set; }
 
 		public static string CourseEnteredSceneName = null;
+		private static CoursePlayer _coursePlayer;
 
 		private const string MysteriousLevelCover = "???";
 
 		private readonly List<SelectLevelResultItem> _endMenuLevelItems = new();
 
+		//
+		// ---
+		//
+
+		private void OnLevelInitialized(LevelPlayer levelPlayer) {
+			_disposables.Add(
+				levelPlayer.CanStartPlaying.Subscribe(value => OnLevelReadyStateChanged(levelPlayer, value)));
+		}
+
+		private void OnLevelReadyStateChanged(LevelPlayer levelPlayer, bool isLevelReady) {
+			if (!isLevelReady)
+				return;
+
+			if (levelPlayer != _coursePlayer.CurrentLevelPlayer.CurrentValue)
+				return;
+
+			AllowCountdownSkip();
+		}
+
+		private void OnAccuracyConstraintUpdate(string xAccuracyString) {
+			UpdateAccuracyConstraintString(xAccuracyString);
+		}
+
+		private void OnDeathConstraintUpdate(int deathsLeft) {
+			UpdateDeathConstraintString(deathsLeft);
+
+			if (_lastDeathsLeft > deathsLeft)
+				FlashConstraintChip(ConstraintType.Death);
+
+			_lastDeathsLeft = deathsLeft;
+		}
+
+		private void OnLifeConstraintUpdate(int livesLeft) {
+			UpdateLifeConstraintString(livesLeft);
+
+			if (_lastLivesLeft > livesLeft)
+				FlashConstraintChip(ConstraintType.Life);
+
+			_lastLivesLeft = livesLeft;
+		}
+
+		private void OnCourseEnded(CourseResult result) {
+			_lastCourseResult = result;
+		}
+
+		//
+		// ---
+		//
+
 		private void Awake() {
 			Instance = this;
+
+			_disposables.Add(_coursePlayer.CurrentLevelPlayer
+				.Select(player =>
+					player == null
+						? Observable.Return(1f.ToAccuracyNotation())
+						: player.Level.DisableAccuracyConstraint
+							? Observable.Return("-")
+							: player.Stats.MaxPossibleXAccuracy.Select(constraint => constraint.ToAccuracyNotation()))
+				.Switch().Subscribe(OnAccuracyConstraintUpdate));
+			_disposables.Add(_coursePlayer.ConstraintChecker.DeathConstraint.Subscribe(OnDeathConstraintUpdate));
+			_disposables.Add(_coursePlayer.ConstraintChecker.LifeConstraint.Subscribe(OnLifeConstraintUpdate));
+			_disposables.Add(_coursePlayer.LevelPlayerInitialized.Subscribe(OnLevelInitialized));
+			_disposables.Add(_coursePlayer.CourseEnded.Subscribe(OnCourseEnded));
 
 			_chipBackgroundColor = sidebarAccuracyConstraintChipBackground.color;
 			_chipIconColor = sidebarAccuracyConstraintChipIcon.color;
@@ -154,8 +226,8 @@ namespace CourseMod.Components.Scenes {
 			endMenuExitButton.onClick.AddListener(QuitToLastScene);
 			endMenuRetryButton.onClick.AddListener(RetryCourse);
 
-			if (GameplayPatches.CourseState.SelectedCourse.HasValue) {
-				SetCourseInfo();
+			if (_coursePlayer != null) {
+				SetCourseInfo(_coursePlayer.Course);
 				ShowStartScreen();
 			} else {
 				ResetCourseInfo();
@@ -165,6 +237,35 @@ namespace CourseMod.Components.Scenes {
 		private void Update() {
 			UpdateCountdown();
 			UpdateContentScreen();
+			
+			#if DEBUG
+			if (Application.isPlaying) {
+				var ctrl = RDInput.holdingControl;
+
+				if (ctrl) {
+					if (Input.GetKeyDown(KeyCode.N)) {
+						_coursePlayer.CurrentLevelPlayer.CurrentValue.Complete();
+						
+						if (!_coursePlayer.IsOnLastLevel.CurrentValue)
+							_coursePlayer.NextLevel();
+					}
+
+					if (Input.GetKeyDown(KeyCode.M)) {
+						var maxIndex = _coursePlayer.LevelPlayers.Length - 2;
+						var iterated = false;
+						
+						for (var i = _coursePlayer.Index.CurrentValue; i < maxIndex; i++) 
+						{
+							_coursePlayer.LevelPlayers[i].Complete();
+							iterated = true;
+						}
+						
+						if (iterated) 
+							_coursePlayer.NextLevel();
+					}
+				}
+			}
+			#endif 
 
 			var mainPress =
 #if UNITY_EDITOR
@@ -203,6 +304,10 @@ namespace CourseMod.Components.Scenes {
 
 		private void OnDestroy() {
 			ReleaseTexture();
+			_coursePlayer.Dispose();
+
+			foreach (var disposable in _disposables)
+				disposable.Dispose();
 		}
 
 		private void ReleaseTexture() {
@@ -272,15 +377,12 @@ namespace CourseMod.Components.Scenes {
 			countdownSkip.color = Color.white.SetAlpha(0);
 		}
 
-		private void SetCourseInfo() {
-			var selectedCourse = GameplayPatches.CourseState.SelectedCourse;
-
-			if (!selectedCourse.HasValue)
+		private void SetCourseInfo(Course course) {
+			if (_coursePlayer == null)
 				return;
 
 			ResetCourseInfo();
 
-			var course = selectedCourse.Value;
 			var settings = course.Settings;
 
 			var usesAnyConstraint = false;
@@ -315,7 +417,7 @@ namespace CourseMod.Components.Scenes {
 				if (EnableSidebarMenuOnGameScene) {
 					sidebarAccuracyConstraintText.text = course.Levels[0].DisableAccuracyConstraint
 						? "-"
-						: 1d.ToAccuracyNotation();
+						: 1f.ToAccuracyNotation();
 				}
 
 				sidebarAccuracyConstraintSubText.gameObject.SetActive(EnableSidebarMenuOnGameScene);
@@ -381,7 +483,8 @@ namespace CourseMod.Components.Scenes {
 				}
 
 				var endResultItem = Instantiate(levelResultItemPrefab, endMenuLevelItemsContainer);
-				var record = GameplayPatches.CourseState.LevelPlayRecords.ElementAtOrDefault(i);
+				var record = _lastCourseResult?.Records?.ElementAtOrDefault(i);
+
 				endResultItem.UpdateDisplay(level.LevelMeta.Song, i + 1, record);
 				_endMenuLevelItems.Add(endResultItem);
 
@@ -396,65 +499,80 @@ namespace CourseMod.Components.Scenes {
 				UpdateCourseSidebarLevelItem(i, level, record, levels.Count);
 			}
 
-			UpdateConstraintStrings();
+			// UpdateConstraintStrings();
 		}
 
-		private void UpdateConstraintStrings(double? newXAccDisplay = null) {
-			var selectedCourse = GameplayPatches.CourseState.SelectedCourse;
+		// private void void UpdateConstraintStrings() {
+		// 	if (_coursePlayer == null) return;
+		//
+		// 	var course = _coursePlayer.Course;
+		//
+		// 	var settings = course.Settings;
+		//
+		// 	var xAccLimit = settings.AccuracyConstraint;
+		// 	var totalDeath = settings.DeathConstraint;
+		// 	var totalLife = settings.LifeConstraint;
+		//
+		// 	var currentPlayer = _coursePlayer.CurrentLevelPlayer.CurrentValue;
+		// 	var currentLevel = currentPlayer.Level;
+		//
+		// 	var constraintChecker = _coursePlayer.ConstraintChecker;
+		//
+		// 	if (newXAccDisplay is { } newXAcc && xAccLimit != null) {
+		// 		sidebarAccuracyConstraintText.text = currentLevel.DisableAccuracyConstraint
+		// 			? "-"
+		// 			: newXAcc.ToAccuracyNotation();
+		// 	}
+		//
+		// 	if (totalDeath != null) {
+		// 		endMenuDeathConstraintText.text =
+		// 			sidebarDeathConstraintText.text =
+		// 				(totalDeath - constraintChecker.DeathConstraint.CurrentValue).ToString();
+		// 	}
+		//
+		// 	if (totalLife != null) {
+		// 		endMenuLifeConstraintText.text =
+		// 			sidebarLifeConstraintText.text =
+		// 				(totalLife - constraintChecker.LifeConstraint.CurrentValue).ToString();
+		// 	}
+		// }
 
-			if (selectedCourse is not { } course) return;
-			var settings = course.Settings;
-
-			var xAccLimit = settings.AccuracyConstraint;
-			var totalDeath = settings.DeathConstraint;
-			var totalLife = settings.LifeConstraint;
-
-			if (newXAccDisplay is { } newXAcc && xAccLimit != null) {
-				var levelIndex = GameplayPatches.CourseState.LevelIndex;
-				var currentLevel = course.Levels.Count <= levelIndex + 1
-					? course.Levels.Last()
-					: course.Levels[levelIndex];
-
-				sidebarAccuracyConstraintText.text = currentLevel.DisableAccuracyConstraint
-					? "-"
-					: newXAcc.ToAccuracyNotation();
-			}
-
-			if (totalDeath != null) {
-				endMenuDeathConstraintText.text =
-					sidebarDeathConstraintText.text = (totalDeath - GameplayPatches.CourseState.DeathsLeft).ToString();
-			}
-
-			if (totalLife != null) {
-				endMenuLifeConstraintText.text =
-					sidebarLifeConstraintText.text = (totalLife - GameplayPatches.CourseState.LivesLeft).ToString();
-			}
+		private void UpdateAccuracyConstraintString(string xAccuracyString) {
+			sidebarAccuracyConstraintText.text = xAccuracyString;
 		}
 
-		public void UpdateConstraintChip(GameplayPatches.CourseState.FailReason flashChipType, bool flash,
-			double? currentMaxPossibleXAcc) {
-			UpdateConstraintStrings(currentMaxPossibleXAcc);
-			if (!flash) return;
+		private void UpdateDeathConstraintString(int deathsLeft) {
+			endMenuDeathConstraintText.text =
+				sidebarDeathConstraintText.text =
+					deathsLeft.ToString();
+		}
 
+		private void UpdateLifeConstraintString(int livesLeft) {
+			endMenuDeathConstraintText.text =
+				sidebarDeathConstraintText.text =
+					livesLeft.ToString();
+		}
+
+		public void FlashConstraintChip(ConstraintType flashChipType) {
 			Image bg;
 			Image icon;
 			TextMeshProUGUI text;
 			TextMeshProUGUI subText;
 
 			switch (flashChipType) {
-				case GameplayPatches.CourseState.FailReason.Accuracy:
+				case ConstraintType.Accuracy:
 					bg = sidebarAccuracyConstraintChipBackground;
 					icon = sidebarAccuracyConstraintChipIcon;
 					text = sidebarAccuracyConstraintText;
 					subText = sidebarAccuracyConstraintSubText;
 					break;
-				case GameplayPatches.CourseState.FailReason.Death:
+				case ConstraintType.Death:
 					bg = sidebarDeathConstraintChipBackground;
 					icon = sidebarDeathConstraintChipIcon;
 					text = sidebarDeathConstraintText;
 					subText = sidebarDeathConstraintSubText;
 					break;
-				case GameplayPatches.CourseState.FailReason.Life:
+				case ConstraintType.Life:
 					bg = sidebarLifeConstraintChipBackground;
 					icon = sidebarLifeConstraintChipIcon;
 					text = sidebarLifeConstraintText;
@@ -489,38 +607,51 @@ namespace CourseMod.Components.Scenes {
 			sidebarDeathConstraintText.text =
 				sidebarLifeConstraintText.text = "0";
 
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
+			if (_coursePlayer == null)
 				return;
+
+			var course = _coursePlayer.Course;
 
 			sidebarAccuracyConstraintText.text = course.Levels[0].DisableAccuracyConstraint
 				? "-"
-				: 1d.ToAccuracyNotation();
+				: 1f.ToAccuracyNotation();
 		}
 
 		private void UpdateCourseEndUI() {
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
+			if (_coursePlayer == null)
 				return;
+
+			if (_lastCourseResult is not { } lastCourseResult)
+				return;
+
+			if (_lastCourseResult.Equals(default(CourseResult)))
+				return;
+
+			var course = _coursePlayer.Course;
 
 			LogTools.Log("Transition - UpdateCourseEndUI()");
 
 			endMenuTitle.text =
-				I18N.Get($"transition-course-{(GameplayPatches.CourseState.Failed ? "fail" : "clear")}");
+				I18N.Get($"transition-course-{((lastCourseResult.FailReasons?.Length ?? 0) > 0 ? "fail" : "clear")}");
 
 			for (var i = 0; i < _endMenuLevelItems.Count; i++) {
 				var item = _endMenuLevelItems[i];
-				var record = GameplayPatches.CourseState.LevelPlayRecords.ElementAtOrDefault(i);
+				var record = lastCourseResult.Records.ElementAtOrDefault(i);
 
 				item.UpdateDisplay(record);
 
-				if (course.Levels[i].Mysterious && i >= GameplayPatches.CourseState.LevelIndex)
+				var currentIndex = _coursePlayer.Index.CurrentValue;
+				if (course.Levels[i].Mysterious && i >= currentIndex)
 					item.levelName.text = MysteriousLevelCover;
 			}
 
-			var totalAccuracy = GameplayPatches.CourseState.TotalXAccuracy;
-			var totalMargins = GameplayPatches.CourseState.TotalHitMargins;
-			var totalFloors = GameplayPatches.CourseState.TotalFloors;
+			var finalCourseResult = lastCourseResult.ToStoredValue();
+
+			var totalAccuracy = finalCourseResult.TotalAccuracy;
+			var totalMargins = finalCourseResult.TotalHitMargins;
+			var totalFloors = finalCourseResult.TotalFloors;
 			var previousPlayRecord = course.GetPlayRecord();
-			var personalBest = previousPlayRecord == null || previousPlayRecord.TotalAccuracy < totalAccuracy;
+			var personalBest = previousPlayRecord == null || (previousPlayRecord is {} r && r.TotalAccuracy < totalAccuracy);
 
 			endMenuTotalAccuracyText.text = totalAccuracy
 				.ToAccuracyNotation()
@@ -528,8 +659,6 @@ namespace CourseMod.Components.Scenes {
 
 			endMenuPersonalBestText.SetActive(personalBest);
 			endMenuHitMarginDisplay.UpdateDisplay(totalMargins);
-
-			UpdateConstraintStrings();
 
 			endMenuAccuracyConstraintChip.color = Color.white.SetAlpha(endMenuAccuracyConstraintChip.color.a);
 			endMenuDeathConstraintChip.color = Color.white.SetAlpha(endMenuDeathConstraintChip.color.a);
@@ -544,11 +673,11 @@ namespace CourseMod.Components.Scenes {
 			endMenuLifeConstraintSubText.color = Color.white.SetAlpha(endMenuLifeConstraintSubText.color.a);
 
 			var red = ColorTools.Html("f54f51");
-			foreach (var reason in GameplayPatches.CourseState.FailReasons) {
+			foreach (var reason in lastCourseResult.FailReasons ?? Array.Empty<CourseFailReason>()) {
 				var chipBackground = reason switch {
-					GameplayPatches.CourseState.FailReason.Accuracy => endMenuAccuracyConstraintChip,
-					GameplayPatches.CourseState.FailReason.Death => endMenuDeathConstraintChip,
-					GameplayPatches.CourseState.FailReason.Life => endMenuLifeConstraintChip,
+					CourseFailReason.AccuracyConstraint => endMenuAccuracyConstraintChip,
+					CourseFailReason.DeathConstraint => endMenuDeathConstraintChip,
+					CourseFailReason.LifeConstraint => endMenuLifeConstraintChip,
 					_ => null
 				};
 
@@ -556,9 +685,9 @@ namespace CourseMod.Components.Scenes {
 					chipBackground.color = red.SetAlpha(chipBackground.color.a);
 
 				var chipIcon = reason switch {
-					GameplayPatches.CourseState.FailReason.Accuracy => endMenuAccuracyConstraintChipIcon,
-					GameplayPatches.CourseState.FailReason.Death => endMenuDeathConstraintChipIcon,
-					GameplayPatches.CourseState.FailReason.Life => endMenuLifeConstraintChipIcon,
+					CourseFailReason.AccuracyConstraint => endMenuAccuracyConstraintChipIcon,
+					CourseFailReason.DeathConstraint => endMenuDeathConstraintChipIcon,
+					CourseFailReason.LifeConstraint => endMenuLifeConstraintChipIcon,
 					_ => null
 				};
 
@@ -566,9 +695,9 @@ namespace CourseMod.Components.Scenes {
 					chipIcon.color = red.SetAlpha(chipIcon.color.a);
 
 				var chipText = reason switch {
-					GameplayPatches.CourseState.FailReason.Accuracy => endMenuAccuracyConstraintText,
-					GameplayPatches.CourseState.FailReason.Death => endMenuDeathConstraintText,
-					GameplayPatches.CourseState.FailReason.Life => endMenuLifeConstraintText,
+					CourseFailReason.AccuracyConstraint => endMenuAccuracyConstraintText,
+					CourseFailReason.DeathConstraint => endMenuDeathConstraintText,
+					CourseFailReason.LifeConstraint => endMenuLifeConstraintText,
 					_ => null
 				};
 
@@ -576,8 +705,8 @@ namespace CourseMod.Components.Scenes {
 					chipText.color = red.SetAlpha(chipText.color.a);
 
 				var chipSubText = reason switch {
-					GameplayPatches.CourseState.FailReason.Death => endMenuDeathConstraintSubText,
-					GameplayPatches.CourseState.FailReason.Life => endMenuLifeConstraintSubText,
+					CourseFailReason.DeathConstraint => endMenuDeathConstraintSubText,
+					CourseFailReason.LifeConstraint => endMenuLifeConstraintSubText,
 					_ => null
 				};
 
@@ -586,12 +715,14 @@ namespace CourseMod.Components.Scenes {
 			}
 
 			if (personalBest)
-				GameplayPatches.CourseState.SaveRecord();
+				course.SaveRecord(finalCourseResult);
 		}
 
 		private void UpdateCourseSidebarUI() {
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
+			if (_coursePlayer == null)
 				return;
+
+			var course = _coursePlayer.Course;
 
 			sidebarLevelItem1.gameObject.SetActive(false);
 			sidebarLevelItem2.gameObject.SetActive(false);
@@ -603,17 +734,17 @@ namespace CourseMod.Components.Scenes {
 			var levels = course.Levels;
 			for (var i = 0; i < levels.Count; i++) {
 				var level = levels[i];
-				var record = GameplayPatches.CourseState.LevelPlayRecords.ElementAtOrDefault(i);
+				var record = _lastCourseResult?.Records.ElementAtOrDefault(i);
 				UpdateCourseSidebarLevelItem(i, level, record, levels.Count);
 			}
 		}
 
-		private void UpdateCourseSidebarLevelItem(int i, CourseLevel level, CourseLevelPlayRecord record,
+		private void UpdateCourseSidebarLevelItem(int i, CourseLevel level, CourseLevelPlayRecord? record,
 			int levelsCount) {
-			if (GameplayPatches.CourseState.SelectedCourse is null)
+			if (_coursePlayer == null)
 				return;
 
-			var currentLevelIndex = GameplayPatches.CourseState.LevelIndex;
+			var currentLevelIndex = _coursePlayer.Index.Value;
 			var listMoveOffset = Math.Max(-1, currentLevelIndex - 2);
 			var levelMeta = level.LevelMeta;
 
@@ -654,8 +785,10 @@ namespace CourseMod.Components.Scenes {
 		}
 
 		private void BeginCountdown() {
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
+			if (_coursePlayer == null)
 				return;
+
+			var course = _coursePlayer.Course;
 
 			if (course.Settings.CountdownSeconds is { } countdown) {
 				_countdownValue = countdown;
@@ -666,7 +799,7 @@ namespace CourseMod.Components.Scenes {
 				countdownNumber.text = "∞";
 			}
 
-			LoadLevel(AllowCountdownSkip);
+			_coursePlayer.NextLevel();
 		}
 
 		private void UpdateCountdown() {
@@ -694,8 +827,6 @@ namespace CourseMod.Components.Scenes {
 		}
 
 		private void SkipCountdown() {
-			LogTools.Log("Transition - SkipCountdown()");
-
 			var countdown = Math.Min(_countdownValue, 99);
 			if (countdown < 1.5)
 				return;
@@ -788,7 +919,7 @@ namespace CourseMod.Components.Scenes {
 			}
 		}
 
-		// TODO better transitions
+		// TODO use strategy pattern
 		private void ShowBackground(Action callback) {
 			var cams = scrCamera.instance;
 			cams?.PausePlanetsCam.gameObject.SetActive(true);
@@ -814,10 +945,14 @@ namespace CourseMod.Components.Scenes {
 				});
 		}
 
+		//
+		// ---
+		//
+
 		private void QuitToLastScene() {
 			_leavingScene = true;
 			CloseAllAndProceed(() => {
-				GameplayPatches.CourseState.TerminateCourse();
+				// GameplayPatches.CourseState.TerminateCourse();
 				SceneTools.LoadSceneAnimated(
 					() => SceneManager.LoadScene(CourseEnteredSceneName ?? GCNS.sceneLevelSelect),
 					null
@@ -827,9 +962,9 @@ namespace CourseMod.Components.Scenes {
 
 		private void RetryCourse() {
 			CloseAllAndProceed(() => {
-				GameplayPatches.CourseState.ResetProgress();
+				// GameplayPatches.CourseState.ResetProgress();
 				ResetConstraintChips();
-				LoadLevel();
+				_coursePlayer.NextLevel();
 				ProceedToLevel();
 				_allowRetryKeyPresses = true;
 			});
@@ -838,18 +973,22 @@ namespace CourseMod.Components.Scenes {
 		// ---
 
 		public void ProceedToLevel() {
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
+			if (_coursePlayer == null)
 				return;
+
+			var course = _coursePlayer.Course;
 
 			LogTools.Log("Transition - ProceedToLevel()");
 			KillAllTweens();
 
-			var levelIndex = GameplayPatches.CourseState.LevelIndex;
-			if (levelIndex >= course.Levels.Count) {
-				LogTools.Log("End of course");
+			// TODO fix this case where progressing to the last index causes end of course
+			if (_coursePlayer.IsOnLastLevel.CurrentValue) {
+				LogTools.Log("Reached the end of course");
 				ShowEndScreen();
 				return;
 			}
+
+			var levelIndex = _coursePlayer.Index.Value;
 
 			LogTools.Log($"Proceed to level index {levelIndex}");
 
@@ -863,11 +1002,11 @@ namespace CourseMod.Components.Scenes {
 			return;
 
 			void StartLevel() {
-				GameplayPatches.CourseState.PauseRequested = false;
+				GameplayPatches.RequestLevelStart();
 
-				LogTools.Log(
-					$"Transition - Setting PlayStartedLevelIndex {GameplayPatches.CourseState.PlayStartedLevelIndex} -> {GameplayPatches.CourseState.LevelIndex}");
-				GameplayPatches.CourseState.PlayStartedLevelIndex = GameplayPatches.CourseState.LevelIndex;
+				// LogTools.Log(
+				// 	$"Transition - Setting PlayStartedLevelIndex {GameplayPatches.CourseState.PlayStartedLevelIndex} -> {GameplayPatches.CourseState.LevelIndex}");
+				// GameplayPatches.CourseState.PlayStartedLevelIndex = GameplayPatches.CourseState.LevelIndex;
 			}
 		}
 
@@ -906,7 +1045,7 @@ namespace CourseMod.Components.Scenes {
 			ShowBackground(ShowContent);
 			UpdateCourseSidebarUI();
 
-			GameplayPatches.CourseState.PauseRequested = true;
+			GameplayPatches.RequestLevelPause();
 
 			return;
 
@@ -938,7 +1077,7 @@ namespace CourseMod.Components.Scenes {
 			KillAllTweens();
 			ShowBackground(ShowContent);
 
-			GameplayPatches.CourseState.PauseRequested = true;
+			GameplayPatches.RequestLevelPause();
 
 			return;
 
@@ -954,7 +1093,7 @@ namespace CourseMod.Components.Scenes {
 				_contentTween = courseStartUI.DOFade(1, .2f)
 					.SetUpdate(true)
 					.OnComplete(() => {
-						LoadLevel();
+						_coursePlayer.NextLevel();
 						_displayingStartScreen = true;
 					});
 
@@ -965,9 +1104,11 @@ namespace CourseMod.Components.Scenes {
 
 		// ---
 
-		public static void BeginCourse() {
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
-				throw new AssertionException("A course object must be selected in order to start it");
+		public static void BeginCourse(CoursePlayer coursePlayer) {
+			_coursePlayer = coursePlayer;
+			GameplayPatches.CurrentCoursePlayer = coursePlayer;
+
+			var course = coursePlayer.Course;
 
 			Assert.True(course.Levels.Select(l => l.AbsolutePath).All(File.Exists),
 				"One or more levels have missing files");
@@ -980,9 +1121,6 @@ namespace CourseMod.Components.Scenes {
 
 			SceneManager.LoadScene(SCENE_NAME, LoadSceneMode.Single);
 			SceneManager.LoadScene(GCNS.sceneGame, LoadSceneMode.Additive);
-
-			GameplayPatches.CourseState.PlayingCourse = true;
-			GameplayPatches.CourseState.ResetProgress();
 
 			LogTools.Log("Loaded all scenes");
 
@@ -1004,20 +1142,21 @@ namespace CourseMod.Components.Scenes {
 			}
 		}
 
-		private static void LoadLevel() => LoadLevel(null);
-
-		private static void LoadLevel([CanBeNull] Action callback) {
-			if (GameplayPatches.CourseState.SelectedCourse is not { } course)
-				return;
-
-			var levelIndex = GameplayPatches.CourseState.LevelIndex;
-			LogTools.Log($"Start loading level at index {levelIndex}");
-
-			if (course.Levels.Count <= levelIndex)
-				return;
-
-			var level = course.Levels[levelIndex];
-			GameplayPatches.SetupGameSceneParameters.LoadLevel(level.AbsolutePath, callback);
-		}
+		// private static void LoadLevel() => LoadLevel(null);
+		//
+		// private static void LoadLevel([CanBeNull] Action callback) {
+		// 	if (_coursePlayer == null)
+		// 		return;
+		// 	
+		// 	var course = _coursePlayer.Course;
+		// 	var levelIndex = _coursePlayer.Index.Value;
+		// 	LogTools.Log($"Start loading level at index {levelIndex}");
+		//
+		// 	if (course.Levels.Count <= levelIndex)
+		// 		return;
+		//
+		// 	var level = course.Levels[levelIndex];
+		// 	GameplayPatches.SetupGameSceneParameters.LoadLevel(_coursePlayer.CurrentLevelPlayer.CurrentValue, callback);
+		// }
 	}
 }

@@ -1,16 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using CourseMod.Components.Scenes;
 using CourseMod.DataModel;
+using CourseMod.Player;
 using CourseMod.Utils;
 using DG.Tweening;
 using HarmonyLib;
 using JetBrains.Annotations;
+using MonsterLove.StateMachine;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -20,154 +23,266 @@ namespace CourseMod.Patches {
 	public static class GameplayPatches {
 		private static CourseTransitionScene Instance => CourseTransitionScene.Instance;
 
-		public static class CourseState {
-			public enum FailReason {
-				Accuracy,
-				Death,
-				Life,
+		[HarmonyPatch(typeof(scnLevelSelect), "Update")]
+		private static class EnterCourseScene {
+			private static void Postfix() {
+				if (RDInput.holdingControl && RDInput.holdingShift && Input.GetKeyDown(KeyCode.Comma))
+					SceneManager.LoadScene(CourseSelectScene.SCENE_NAME);
 			}
+		}
 
-			public static bool PlayingCourse;
+		// public static class CourseState123dsgrayiurtasyurdgdqwredqwtyuxrfahdcg7u6rs5ga6y7drfbayst {
+		// 	public enum FailReason {
+		// 		Accuracy,
+		// 		Death,
+		// 		Life,
+		// 	}
+		//
+		// 	public static bool PlayingCourse;
+		//
+		// 	private static Course? _selectedCourse;
+		//
+		// 	public static Course? SelectedCourse {
+		// 		get => _selectedCourse;
+		// 		set {
+		// 			_selectedCourse = value;
+		//
+		// 			if (value is { } course) {
+		// 				TotalLevels = course.Levels.Count;
+		// 			} else {
+		// 				TotalLevels = 0;
+		// 			}
+		// 		}
+		// 	}
+		//
+		// 	public static int TotalLevels;
+		//
+		// 	public static int LevelIndex;
+		// 	public static int PlayStartedLevelIndex;
+		//
+		// 	public static SerializableHitMargins TotalHitMargins = new();
+		// 	public static int TotalFloors;
+		//
+		// 	public static double TotalXAccuracy;
+		// 	public static int? DeathsLeft;
+		// 	public static int? LivesLeft;
+		//
+		// 	public static bool Failed = true;
+		// 	public static bool PauseStateFromPatch;
+		// 	public static bool PauseRequested;
+		// 	public static bool WonState;
+		// 	public static bool FailState;
+		//
+		// 	public static LevelPlayer BoundLevelPlayer;
+		//
+		// 	public static readonly List<CourseLevelPlayRecord> LevelPlayRecords = new();
+		// 	public static readonly HashSet<FailReason> FailReasons = new();
+		//
+		// 	public static void Reset() {
+		// 		TerminateCourse();
+		//
+		// 		SelectedCourse = null;
+		// 		TotalLevels = 0;
+		//
+		// 		ResetProgress();
+		// 	}
+		//
+		// 	public static void ResetProgress() {
+		// 		LogTools.Log("Resetting course state progress");
+		//
+		// 		LevelIndex = 0;
+		// 		PlayStartedLevelIndex = 0;
+		//
+		// 		TotalFloors = 0;
+		// 		TotalHitMargins = new();
+		// 		TotalXAccuracy = 0;
+		//
+		// 		DeathsLeft = SelectedCourse?.Settings.DeathConstraint;
+		// 		LivesLeft = SelectedCourse?.Settings.LifeConstraint;
+		//
+		// 		Failed = true;
+		// 		PauseStateFromPatch = false;
+		// 		PauseRequested = false;
+		//
+		// 		WonState = false;
+		// 		FailState = false;
+		//
+		// 		LevelPlayRecords.Clear();
+		// 		FailReasons.Clear();
+		//
+		// 		BoundLevelPlayer = null;
+		//
+		// 		CourseFailUpdate.DisplayedEndScreen = false;
+		// 		CourseLevelCompleteUpdate.WonTime = null;
+		// 	}
+		//
+		// 	public static CourseLevelPlayRecord DefaultPlayRecord =>
+		// 		new() {
+		// 			CourseChecksum = SelectedCourse.HasValue
+		// 				? ChecksumTools.ComputeCourseChecksum(SelectedCourse.Value).Content
+		// 				: string.Empty,
+		// 			GameplayChecksum = string.Empty,
+		// 			HitMargins = SerializableHitMargins.Default,
+		// 			LevelNumber = 0,
+		// 			XAccuracy = 0,
+		// 			TotalFloors = 0
+		// 		};
+		//
+		// 	// public static void SaveRecord() {
+		// 	// 	if (SelectedCourse is not { } course)
+		// 	// 		return;
+		// 	//
+		// 	// 	var json = JsonConvert.SerializeObject(new CoursePlayRecord { Records = LevelPlayRecords.ToArray() });
+		// 	// 	File.WriteAllText(course.GetPlayRecordPath(), json);
+		// 	// }
+		//
+		// 	public static void StoreRecord() {
+		// 		var levelNumber = LevelIndex + 1;
+		//
+		// 		if (LevelPlayRecords.LastOrDefault(r => r.LevelNumber == levelNumber) != null)
+		// 			return;
+		//
+		// 		var controller = scrController.instance;
+		//
+		// 		var tracker = controller.mistakesManager;
+		// 		var hitMarginsCount = scrMistakesManager.hitMarginsCount;
+		// 		var floors = tracker.lm.listFloors;
+		//
+		// 		var record = DefaultPlayRecord;
+		//
+		// 		record.LevelNumber = levelNumber;
+		// 		record.GameplayChecksum = ChecksumTools.ComputeGameplayChecksum(tracker.customLevel.levelData).Hash;
+		//
+		// 		record.HitMargins =
+		// 			SerializableHitMargins.FromHitMarginsCount(hitMarginsCount);
+		// 		record.XAccuracy = ConstraintLimiter.GetObjectiveXAcc(floors, false);
+		//
+		// 		if (double.IsNaN(record.XAccuracy))
+		// 			record.XAccuracy = 0;
+		//
+		// 		var totalFloors = Math.Max(0, floors.Count - 1);
+		// 		record.TotalFloors = totalFloors;
+		//
+		// 		LevelPlayRecords.Add(record);
+		//
+		// 		TotalHitMargins += record.HitMargins;
+		// 		TotalXAccuracy += record.XAccuracy;
+		// 		TotalFloors += totalFloors;
+		//
+		// 		LogTools.Log($"stored; now there are {LevelPlayRecords.Count} records");
+		// 	}
+		//
+		// 	public static void ProgressStateToNextLevel() {
+		// 		LogTools.Log($"Progressing state to next: {LevelIndex + 1}");
+		//
+		// 		StoreRecord();
+		// 		LevelIndex++;
+		// 		scrController.instance.mistakesManager.Reset();
+		// 	}
+		//
+		// 	public static void TerminateCourse() {
+		// 		// SceneManager.UnloadSceneAsync("scnGame");
+		// 		PlayingCourse = false;
+		// 	}
+		// }
 
-			private static Course? _selectedCourse;
+		public static CoursePlayer CurrentCoursePlayer;
 
-			public static Course? SelectedCourse {
-				get => _selectedCourse;
-				set {
-					_selectedCourse = value;
+		public static void RequestLevelStart() => PatchStateStore.PauseRequested = false;
+		public static void RequestLevelPause() => PatchStateStore.PauseRequested = true;
 
-					if (value is { } course) {
-						TotalLevels = course.Levels.Count;
-					} else {
-						TotalLevels = 0;
-					}
-				}
-			}
+		public static void KillPlayer(string deathReason) {
+			// ignore non-custom level environment
+			if (!scnGame.instance)
+				return;
 
-			public static int TotalLevels;
+			// ignore environments unrelated to course
+			if (CurrentCoursePlayer == null)
+				return;
 
-			public static int LevelIndex;
-			public static int PlayStartedLevelIndex;
+			var controller = scrController.instance;
+			if (!controller) return;
 
-			public static SerializableHitMargins TotalHitMargins = new();
-			public static int TotalFloors;
+			var planetarySystem = controller.planetarySystem;
+			if (!planetarySystem) return;
 
-			public static double TotalXAccuracy;
-			public static int? DeathsLeft;
-			public static int? LivesLeft;
+			planetarySystem.Die(PlanetarySystem.DeathAnimation.CrumbleAndExplode);
+			LogTools.Log("Killed planetary system");
 
-			public static bool Failed = true;
-			public static bool PauseStateFromPatch;
+			if (!string.IsNullOrEmpty(deathReason))
+				CourseFailUpdate.DesiredFailText = deathReason;
+		}
+
+		private static class PatchStateStore {
+			public static bool Pause;
 			public static bool PauseRequested;
-			public static bool WonState;
-			public static bool FailState;
-
-			public static readonly List<CourseLevelPlayRecord> LevelPlayRecords = new();
-			public static readonly HashSet<FailReason> FailReasons = new();
 
 			public static void Reset() {
-				TerminateCourse();
-
-				SelectedCourse = null;
-				TotalLevels = 0;
-
-				ResetProgress();
-			}
-
-			public static void ResetProgress() {
-				LogTools.Log("Resetting course state progress");
-
-				LevelIndex = 0;
-				PlayStartedLevelIndex = 0;
-
-				TotalFloors = 0;
-				TotalHitMargins = new();
-				TotalXAccuracy = 0;
-
-				DeathsLeft = SelectedCourse?.Settings.DeathConstraint;
-				LivesLeft = SelectedCourse?.Settings.LifeConstraint;
-
-				Failed = true;
-				PauseStateFromPatch = false;
-				PauseRequested = false;
-
-				WonState = false;
-				FailState = false;
-
-				LevelPlayRecords.Clear();
-				FailReasons.Clear();
-
+				Pause = PauseRequested = false;
+				
+				EscapeCourse.PreventEscape = false;
 				CourseFailUpdate.DisplayedEndScreen = false;
-				CourseLevelCompleteUpdate.WonTime = null;
+				LogTools.Log($"DisplayedEndScreen = false");
+			}
+		}
+
+		private static void ResetEverything() {
+			CurrentCoursePlayer = null;
+			PatchStateStore.Reset();
+		}
+
+		[HarmonyPatch(typeof(scnGame), "Awake")]
+		public static class SetupGameSceneParameters {
+			public static void LoadLevel(LevelPlayer player, [CanBeNull] Action callback) {
+				var absPath = player.Level.AbsolutePath;
+				
+				LogTools.Log($"Loading level at '{absPath}'");
+				StartLevelAfterTwoFrames.ConsumableAction = callback;
+				CourseFailUpdate.DisplayedEndScreen = false;
+				LogTools.Log($"DisplayedEndScreen = false");
+
+				ControllerFail2StateChangeActionOverrider.ExplodeTween?.Kill();
+
+				var game = scnGame.instance;
+				game.ResetScene(true);
+
+				scrController.instance.paused = false;
+				GCS.customLevelPaths = new[] { absPath };
+
+				game.StartCoroutine(LoadAndPlayAfterTwoFramesDelay());
 			}
 
-			public static CourseLevelPlayRecord DefaultPlayRecord =>
-				new() {
-					CourseChecksum = SelectedCourse.HasValue
-						? ChecksumTools.ComputeCourseChecksum(SelectedCourse.Value).Content
-						: string.Empty,
-					GameplayChecksum = string.Empty,
-					HitMargins = SerializableHitMargins.Default,
-					LevelNumber = 0,
-					XAccuracy = 0,
-					TotalFloors = 0
-				};
+			private static IEnumerator LoadAndPlayAfterTwoFramesDelay() {
+				yield return null;
+				yield return null;
+				scnGame.instance.LoadAndPlayLevel(GCS.customLevelPaths[0]); // the rest are done with patches
 
-			public static void SaveRecord() {
-				if (SelectedCourse is not { } course)
-					return;
-
-				var json = JsonConvert.SerializeObject(new CoursePlayRecord { Records = LevelPlayRecords.ToArray() });
-				File.WriteAllText(course.GetPlayRecordPath(), json);
+				EscapeCourse.PreventEscape = false;
 			}
 
-			public static void StoreRecord() {
-				var levelNumber = LevelIndex + 1;
+			private static void Postfix() {
+				PatchStateStore.Pause = false;
+				CourseFailUpdate.DisplayedEndScreen = false;
+				LogTools.Log($"DisplayedEndScreen = false");
 
-				if (LevelPlayRecords.LastOrDefault(r => r.LevelNumber == levelNumber) != null)
-					return;
+				var settings = ModDataStorage.PlayerSettings;
+				GCS.useNoFail = settings.UseNoFail;
 
-				var controller = scrController.instance;
+#if DEBUG
+				GCS.useNoFail &= !ModDataStorage.PlayerSettings.DebugSettings.DisableNoFail;
+#endif
 
-				var tracker = controller.mistakesManager;
-				var hitMarginsCount = scrMistakesManager.hitMarginsCount;
-				var floors = tracker.lm.listFloors;
+				GCS.difficulty = Difficulty.Strict;
+				GCS.speedTrialMode = false;
+				GCS.nextSpeedRun = 1f;
+				GCS.checkpointNum = 0;
+				
+				LogTools.Log("GCS parameters ready");
 
-				var record = DefaultPlayRecord;
+				var uiController = scrUIController.instance;
+				if (!uiController) return;
 
-				record.LevelNumber = levelNumber;
-				record.GameplayChecksum = ChecksumTools.ComputeGameplayChecksum(tracker.customLevel.levelData).Hash;
-
-				record.HitMargins =
-					SerializableHitMargins.FromHitMarginsCount(hitMarginsCount, scrMistakesManager.hitMargins.Count);
-				record.XAccuracy = ConstraintLimiter.GetObjectiveXAcc(floors, false);
-
-				if (double.IsNaN(record.XAccuracy))
-					record.XAccuracy = 0;
-
-				var totalFloors = Math.Max(0, floors.Count - 1);
-				record.TotalFloors = totalFloors;
-
-				LevelPlayRecords.Add(record);
-
-				TotalHitMargins += record.HitMargins;
-				TotalXAccuracy += record.XAccuracy;
-				TotalFloors += totalFloors;
-
-				LogTools.Log($"stored; now there are {LevelPlayRecords.Count} records");
-			}
-
-			public static void ProgressStateToNextLevel() {
-				LogTools.Log($"Progressing state to next: {LevelIndex + 1}");
-
-				StoreRecord();
-				LevelIndex++;
-				scrController.instance.mistakesManager.Reset();
-			}
-
-			public static void TerminateCourse() {
-				// SceneManager.UnloadSceneAsync("scnGame");
-				PlayingCourse = false;
+				uiController.noFailImage.enabled = false;
 			}
 		}
 
@@ -196,7 +311,7 @@ namespace CourseMod.Patches {
 			private static readonly MethodInfo SkipTarget = AccessTools.Method(typeof(scnGame), "LoadAndPlayLevel");
 
 			private static bool DoThisInstead(scnGame instance, string name) {
-				if (CourseState.PlayingCourse)
+				if (CurrentCoursePlayer != null)
 					return false;
 
 				return instance.LoadAndPlayLevel(name);
@@ -216,24 +331,17 @@ namespace CourseMod.Patches {
 			}
 		}
 
-		[HarmonyPatch(typeof(scnLevelSelect), "Update")]
-		private static class EnterCourseScene {
-			private static void Postfix() {
-				if (RDInput.holdingControl && RDInput.holdingShift && Input.GetKeyDown(KeyCode.Comma))
-					SceneManager.LoadScene(CourseSelectScene.SCENE_NAME);
-			}
-		}
-
 		// TODO this is probably redundant
 		[HarmonyPatch(typeof(scrController), "QuitToMainMenu")]
 		private static class QuitToMainMenu {
 			private static bool Prefix() {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return true;
 
 				scrUIController.instance.WipeToBlack(WipeDirection.StartsFromRight);
 				GCS.sceneToLoad = CourseSelectScene.SCENE_NAME;
-				CourseState.Reset();
+
+				ResetEverything();
 
 				return false;
 			}
@@ -242,7 +350,7 @@ namespace CourseMod.Patches {
 		[HarmonyPatch(typeof(scrUIController), "Awake")]
 		private static class OverrideDifficulty {
 			private static void Postfix() {
-				if (!CourseState.PlayingCourse) return;
+				if (CurrentCoursePlayer == null) return;
 
 				GCS.difficulty = Difficulty.Strict;
 			}
@@ -256,7 +364,7 @@ namespace CourseMod.Patches {
 			private static readonly MethodInfo SkipTarget = AccessTools.Method(typeof(DOVirtual), "DelayedCall");
 
 			private static Tween DoThisInstead(float delay, TweenCallback callback, bool ignoreTimeScale = true) {
-				if (CourseState.PlayingCourse)
+				if (CurrentCoursePlayer != null)
 					return null;
 
 				return ExplodeTween = DOVirtual.DelayedCall(delay, callback, ignoreTimeScale);
@@ -276,60 +384,10 @@ namespace CourseMod.Patches {
 			}
 		}
 
-		[HarmonyPatch(typeof(scnGame), "Awake")]
-		public static class SetupGameSceneParameters {
-			private static void Postfix() {
-				if (!CourseState.PlayingCourse) return;
-
-				CourseState.PauseStateFromPatch = false;
-
-				var settings = ModDataStorage.PlayerSettings;
-				GCS.useNoFail = settings.UseNoFail;
-
-#if DEBUG
-				GCS.useNoFail &= !ModDataStorage.PlayerSettings.DebugSettings.DisableNoFail;
-#endif
-
-				GCS.difficulty = Difficulty.Strict;
-				GCS.speedTrialMode = false;
-				GCS.nextSpeedRun = 1f;
-				GCS.checkpointNum = 0;
-
-				var uiController = scrUIController.instance;
-				if (!uiController) return;
-
-				uiController.noFailImage.enabled = false;
-			}
-
-			public static void LoadLevel(string levelAbsPath, [CanBeNull] Action callback) {
-				LogTools.Log($"Loading level at '{levelAbsPath}'");
-				StartLevelAfterTwoFrames.ConsumableAction = callback;
-
-				ControllerFail2StateChangeActionOverrider.ExplodeTween?.Kill();
-
-				var game = scnGame.instance;
-				game.ResetScene(true);
-
-				scrController.instance.paused = false;
-				GCS.customLevelPaths = new[] { levelAbsPath };
-
-				game.StartCoroutine(LoadAndPlayAfterTwoFramesDelay());
-			}
-
-			private static IEnumerator LoadAndPlayAfterTwoFramesDelay() {
-				yield return null;
-				yield return null;
-				scnGame.instance.LoadAndPlayLevel(GCS.customLevelPaths[0]); // the rest are done with patches
-
-				CourseState.WonState = false;
-				CourseState.FailState = false;
-			}
-		}
-
 		[HarmonyPatch(typeof(scrPressToStart), "ShowText")]
 		private static class SuppressPressAnyKeyText {
 			private static bool Prefix() {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return true;
 
 				StartLevelAfterTwoFrames.CalledFrames = 0;
@@ -364,7 +422,7 @@ namespace CourseMod.Patches {
 			[CanBeNull] public static Action ConsumableAction;
 
 			private static void Postfix(scrController __instance) {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return;
 
 				if (CalledFrames is null)
@@ -373,6 +431,8 @@ namespace CourseMod.Patches {
 				if (ConsumableAction != null) {
 					ConsumableAction.Invoke();
 					ConsumableAction = null;
+
+					LogTools.Log("Consumed callback");
 				}
 
 				CalledFrames++;
@@ -380,10 +440,10 @@ namespace CourseMod.Patches {
 				if (CalledFrames <= 2)
 					return;
 
-				if (CourseState.PauseStateFromPatch)
+				if (PatchStateStore.Pause)
 					return;
 
-				if (CourseState.PauseRequested)
+				if (PatchStateStore.PauseRequested)
 					return;
 
 				LogTools.Log("Begin the level immediately!");
@@ -397,7 +457,7 @@ namespace CourseMod.Patches {
 		[HarmonyPatch(typeof(scrController), "ValidInputWasTriggered")]
 		private static class PreventLevelStartUntilCompletingCountdownTransition {
 			private static bool Prefix(ref bool __result) =>
-				__result = !CourseState.PlayingCourse || !CourseState.PauseRequested;
+				__result = CurrentCoursePlayer == null || !PatchStateStore.PauseRequested;
 		}
 
 		[HarmonyPatch(typeof(CourseTransitionScene), "Update")]
@@ -412,7 +472,7 @@ namespace CourseMod.Patches {
 
 
 				if (_escapeHeldTime >= 3) {
-					CourseState.Reset();
+					ResetEverything();
 					SceneManager.LoadScene(GCNS.sceneLevelSelect);
 					_escapeHeldTime = 0;
 				}
@@ -422,7 +482,7 @@ namespace CourseMod.Patches {
 		[HarmonyPatch(typeof(scrPressToStart), "HideText")]
 		private static class RollbackControllerChanges {
 			private static void Postfix() {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return;
 
 				if (!StartLevelAfterTwoFrames.CalledFrames.HasValue)
@@ -440,141 +500,182 @@ namespace CourseMod.Patches {
 		}
 
 		[HarmonyPatch(typeof(scrMistakesManager), "AddHit")]
-		private static class ConstraintLimiter {
+		private static class ConstraintCheckerHook {
 			private static void Postfix(scrMistakesManager __instance, HitMargin hit) {
-				if (!CourseState.PlayingCourse)
-					return;
+				if (CurrentCoursePlayer == null) return;
 
-				if (CourseState.SelectedCourse is not { } course)
-					return;
+				var payload = new LevelProgressFromPatch() {
+					CurrentFloor = __instance.controller.currFloor.seqID,
+					CurrentHitMargin = hit,
+					HitMarginsCount = scrMistakesManager.hitMarginsCount,
+				};
 
-				var settings = course.Settings;
-				var level = course.Levels[CourseState.LevelIndex];
-
-				if (settings.AccuracyConstraint is { } accConstraint) {
-					if (!level.DisableAccuracyConstraint) {
-						var maxXAcc = GetObjectiveXAcc(__instance.lm.listFloors, true);
-						var failCourse = maxXAcc < accConstraint;
-
-						if (failCourse) {
-							LogTools.Log(
-								$"FAIL COURSE because max possible acc is {maxXAcc} while the constraint is {accConstraint}");
-							FailCourse(CourseState.FailReason.Accuracy);
-						}
-
-						UpdateSidebarConstraintChip(CourseState.FailReason.Accuracy, failCourse, maxXAcc);
-					}
-				}
-
-				if (!level.DisableDeathConstraint && Deaths.Contains(hit)) {
-					if (CourseState.DeathsLeft is not null) {
-						if (--CourseState.DeathsLeft <= 0) {
-							LogTools.Log("FAIL COURSE because no allowed deaths left");
-							FailCourse(CourseState.FailReason.Death);
-						}
-
-						LogTools.Log($"DEATH set to {CourseState.DeathsLeft}");
-						UpdateSidebarConstraintChip(CourseState.FailReason.Death);
-					}
-				}
-
-				if (!level.DisableLifeConstraint && !Perfects.Contains(hit)) {
-					if (CourseState.LivesLeft is not null) {
-						if (--CourseState.LivesLeft <= 0) {
-							LogTools.Log("FAIL COURSE because no allowed lives left");
-							FailCourse(CourseState.FailReason.Life);
-						}
-
-						LogTools.Log($"LIFE set to {CourseState.LivesLeft}");
-						UpdateSidebarConstraintChip(CourseState.FailReason.Life);
-					}
-				}
-
-				return;
-
-				void UpdateSidebarConstraintChip(CourseState.FailReason chipType, bool flash = true,
-					double? currentMaxPossibleXAcc = null) {
-					if (!Instance.EnableSidebarMenuOnGameScene)
-						return;
-
-					Instance.UpdateConstraintChip(chipType, flash, currentMaxPossibleXAcc);
-				}
+				CurrentCoursePlayer.CurrentLevelPlayer.CurrentValue.Stats.ScoreUpdated.OnNext(payload);
 			}
+		}
 
-			private static readonly HitMargin[] Perfects = { HitMargin.Perfect, HitMargin.Auto, };
 
-			private static readonly HitMargin[] SemiPerfects = { HitMargin.EarlyPerfect, HitMargin.LatePerfect, };
-
-			private static readonly HitMargin[] Bares = { HitMargin.VeryEarly, HitMargin.VeryLate, };
-
-			private static readonly HitMargin[] Misses = { HitMargin.TooEarly, HitMargin.TooLate, };
-
-			private static readonly HitMargin[] Deaths = { HitMargin.FailMiss, HitMargin.FailOverload, };
-
-			private static int _lastFailedFrame;
-
-			private static int GetHitCount(int[] marginCount, HitMargin[] margins) {
-				var count = 0;
-				foreach (var margin in margins) {
-					if (HitMarginTools.TryGetHitMarginCount(marginCount, margin, out var c))
-						count += c;
-				}
-
-				return count;
+		// [HarmonyPatch(typeof(scrMistakesManager), "AddHit")]
+		// private static class ConstraintLimiter {
+		// 	private static void Postfix(scrMistakesManager __instance, HitMargin hit) {
+		// 		if (CurrentCoursePlayer == null)
+		// 			return;
+		//
+		// 		var course = CurrentCoursePlayer.Course;
+		//
+		// 		var settings = course.Settings;
+		// 		var level = course.Levels[CurrentCoursePlayer.Index.Value];
+		//
+		// 		if (settings.AccuracyConstraint is { } accConstraint) {
+		// 			if (!level.DisableAccuracyConstraint) {
+		// 				var maxXAcc = GetObjectiveXAcc(__instance.lm.listFloors, true);
+		// 				var failCourse = maxXAcc < accConstraint;
+		//
+		// 				if (failCourse) {
+		// 					LogTools.Log(
+		// 						$"FAIL COURSE because max possible acc is {maxXAcc} while the constraint is {accConstraint}");
+		// 					FailCourse(CourseState.FailReason.Accuracy);
+		// 				}
+		//
+		// 				UpdateSidebarConstraintChip(CourseState.FailReason.Accuracy, failCourse, maxXAcc);
+		// 			}
+		// 		}
+		//
+		// 		if (!level.DisableDeathConstraint && Deaths.Contains(hit)) {
+		// 			if (CourseState.DeathsLeft is not null) {
+		// 				if (--CourseState.DeathsLeft <= 0) {
+		// 					LogTools.Log("FAIL COURSE because no allowed deaths left");
+		// 					FailCourse(CourseState.FailReason.Death);
+		// 				}
+		//
+		// 				LogTools.Log($"DEATH set to {CourseState.DeathsLeft}");
+		// 				UpdateSidebarConstraintChip(CourseState.FailReason.Death);
+		// 			}
+		// 		}
+		//
+		// 		if (!level.DisableLifeConstraint && !Perfects.Contains(hit)) {
+		// 			if (CourseState.LivesLeft is not null) {
+		// 				if (--CourseState.LivesLeft <= 0) {
+		// 					LogTools.Log("FAIL COURSE because no allowed lives left");
+		// 					FailCourse(CourseState.FailReason.Life);
+		// 				}
+		//
+		// 				LogTools.Log($"LIFE set to {CourseState.LivesLeft}");
+		// 				UpdateSidebarConstraintChip(CourseState.FailReason.Life);
+		// 			}
+		// 		}
+		//
+		// 		return;
+		//
+		// 		void UpdateSidebarConstraintChip(CourseState.FailReason chipType, bool flash = true,
+		// 			double? currentMaxPossibleXAcc = null) {
+		// 			if (!Instance.EnableSidebarMenuOnGameScene)
+		// 				return;
+		//
+		// 			Instance.UpdateConstraintChip(chipType, flash, currentMaxPossibleXAcc);
+		// 		}
+		// 	}
+		//
+		// 	private static readonly HitMargin[] Perfects = { HitMargin.Perfect, HitMargin.Auto, };
+		//
+		// 	private static readonly HitMargin[] SemiPerfects = { HitMargin.EarlyPerfect, HitMargin.LatePerfect, };
+		//
+		// 	private static readonly HitMargin[] Bares = { HitMargin.VeryEarly, HitMargin.VeryLate, };
+		//
+		// 	private static readonly HitMargin[] Misses = { HitMargin.TooEarly, HitMargin.TooLate, };
+		//
+		// 	private static readonly HitMargin[] Deaths = { HitMargin.FailMiss, HitMargin.FailOverload, };
+		//
+		// 	private static int _lastFailedFrame;
+		//
+		// 	private static int GetHitCount(int[] marginCount, HitMargin[] margins) {
+		// 		var count = 0;
+		// 		foreach (var margin in margins) {
+		// 			if (HitMarginTools.TryGetHitMarginCount(marginCount, margin, out var c))
+		// 				count += c;
+		// 		}
+		//
+		// 		return count;
+		// 	}
+		//
+		// 	private static int GetHitCount(int[] marginCount, HitMargin margin) {
+		// 		if (HitMarginTools.TryGetHitMarginCount(marginCount, margin, out var c))
+		// 			return c;
+		//
+		// 		return 0;
+		// 	}
+		//
+		// 	public static double GetObjectiveXAcc(List<scrFloor> floors, bool maxPossible) {
+		// 		var floorsCount = Math.Max(0, floors.Count - 1);
+		// 		var hitMarginsCount = scrMistakesManager.hitMarginsCount;
+		//
+		// 		var perfects = GetHitCount(hitMarginsCount, Perfects);
+		// 		var semiPerfects = GetHitCount(hitMarginsCount, SemiPerfects);
+		// 		var bares = GetHitCount(hitMarginsCount, Bares);
+		// 		var misses = GetHitCount(hitMarginsCount, Misses);
+		//
+		// 		var failMisses = GetHitCount(hitMarginsCount, HitMargin.FailMiss);
+		// 		var failOverloads = GetHitCount(hitMarginsCount, HitMargin.FailOverload);
+		//
+		// 		var leftovers = floorsCount - (perfects + semiPerfects + bares + failMisses);
+		// 		var divisor = floorsCount + misses + failOverloads;
+		//
+		// 		// to get max possible: weighted (+ leftovers) / (divisor = total floors + misses + deaths)
+		// 		// to get normalized: weighted / (divisor)
+		//
+		// 		if (maxPossible)
+		// 			perfects += leftovers;
+		//
+		// 		var rawResult = (perfects
+		// 		                 + semiPerfects * .75
+		// 		                 + bares * .4
+		// 		                 + misses * .2) / Math.Max(1, divisor);
+		//
+		// 		return Math.Clamp(0, rawResult, 1);
+		// 	}
+		//
+		// 	private static void FailCourse(CourseState.FailReason reason) {
+		// 		CourseState.FailReasons.Add(reason);
+		//
+		// 		if (_lastFailedFrame == Time.frameCount)
+		// 			return;
+		//
+		// 		_lastFailedFrame = Time.frameCount;
+		//
+		// 		var controller = scrController.instance;
+		// 		if (!controller)
+		// 			return;
+		//
+		// 		// TODO register text and change countdown text
+		// 		controller.FailAction(false, false, "", true);
+		// 		CourseFailUpdate.DesiredFailText = I18N.Get($"general-fail-{reason}");
+		// 		CourseState.FailState = true;
+		// 	}
+		// }
+		
+		[HarmonyPatch(typeof(StateBehaviour), "ChangeState", typeof(Enum))]
+		private static class ControllerStateTracker {
+			public static States FutureState;
+			
+			private static void Postfix(StateBehaviour __instance, Enum newState) 
+			{
+				if (__instance is not scrController) return;
+				if (newState is not States state) return;
+				
+				FutureState = state;
 			}
-
-			private static int GetHitCount(int[] marginCount, HitMargin margin) {
-				if (HitMarginTools.TryGetHitMarginCount(marginCount, margin, out var c))
-					return c;
-
-				return 0;
-			}
-
-			public static double GetObjectiveXAcc(List<scrFloor> floors, bool maxPossible) {
-				var floorsCount = Math.Max(0, floors.Count - 1);
-				var hitMarginsCount = scrMistakesManager.hitMarginsCount;
-
-				var perfects = GetHitCount(hitMarginsCount, Perfects);
-				var semiPerfects = GetHitCount(hitMarginsCount, SemiPerfects);
-				var bares = GetHitCount(hitMarginsCount, Bares);
-				var misses = GetHitCount(hitMarginsCount, Misses);
-
-				var failMisses = GetHitCount(hitMarginsCount, HitMargin.FailMiss);
-				var failOverloads = GetHitCount(hitMarginsCount, HitMargin.FailOverload);
-
-				var leftovers = floorsCount - (perfects + semiPerfects + bares + failMisses);
-				var divisor = floorsCount + misses + failOverloads;
-
-				// to get max possible: weighted (+ leftovers) / (divisor = total floors + misses + deaths)
-				// to get normalized: weighted / (divisor)
-
-				if (maxPossible)
-					perfects += leftovers;
-
-				var rawResult = (perfects
-				                 + semiPerfects * .75
-				                 + bares * .4
-				                 + misses * .2) / Math.Max(1, divisor);
-
-				return Math.Clamp(0, rawResult, 1);
-			}
-
-			private static void FailCourse(CourseState.FailReason reason) {
-				CourseState.FailReasons.Add(reason);
-
-				if (_lastFailedFrame == Time.frameCount)
+		}
+		
+		[HarmonyPatch(typeof(scrController), "FailAction")]
+		private static class CourseFailDetector {
+			private static void Postfix() {
+				if (CurrentCoursePlayer == null) return;
+				if (ControllerStateTracker.FutureState is not (States.Fail or States.Fail2))
 					return;
-
-				_lastFailedFrame = Time.frameCount;
-
-				var controller = scrController.instance;
-				if (!controller)
-					return;
-
-				// TODO register text and change countdown text
-				controller.FailAction(false, false, "", true);
-				CourseFailUpdate.DesiredFailText = I18N.Get($"general-fail-{reason}");
-				CourseState.FailState = true;
+				
+				var sf = new StackFrame(2);
+				if (sf.GetMethod()?.DeclaringType?.Assembly == typeof(scrController).Assembly)
+					CurrentCoursePlayer.FailFromGameMechanics();
 			}
 		}
 
@@ -584,7 +685,7 @@ namespace CourseMod.Patches {
 			public static string DesiredFailText;
 
 			private static bool Prefix(scrController __instance) {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return true;
 
 				Update(__instance);
@@ -605,25 +706,32 @@ namespace CourseMod.Patches {
 				ShowEndScreen();
 			}
 
-			public static void ShowEndScreen() {
+			public static void ShowEndScreen(bool failWithIntent = false) {
+				if (CurrentCoursePlayer == null)
+					return;
+				
 				if (DisplayedEndScreen)
 					return;
 
-				CourseState.StoreRecord();
+				if (failWithIntent)
+					CurrentCoursePlayer.FailFromPlayerIntent();
+
 				Instance.ShowEndScreen();
+				
 				DisplayedEndScreen = true;
+				LogTools.Log($"DisplayedEndScreen = true");
 			}
 		}
 
 		[HarmonyPatch(typeof(scrController), "Update")]
 		private static class CourseFailBackupUpdate {
 			private static void Prefix(scrController __instance) {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return;
 
 				if (__instance.currentState != States.Fail)
 					return;
-				
+
 				CourseFailUpdate.Update(__instance);
 			}
 		}
@@ -633,7 +741,7 @@ namespace CourseMod.Patches {
 			public static float? WonTime;
 
 			private static bool Prefix() {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return true;
 
 				Update();
@@ -642,22 +750,29 @@ namespace CourseMod.Patches {
 			}
 
 			private static void Update() {
-				if (CourseState.LevelIndex != CourseState.PlayStartedLevelIndex)
-					return;
+				const float NextLevelAwaitTime = 3;
 
 				WonTime ??= Time.unscaledTime;
 				var secondsSinceWon = Time.unscaledTime - WonTime.Value;
 				if (secondsSinceWon < 1)
 					return;
 
+				var levelIndex = CurrentCoursePlayer.Index.Value;
+				var maxLevelIndex = CurrentCoursePlayer.LevelPlayers.Length - 1;
+
 				if (!RDInput.mainPress &&
-				    (secondsSinceWon < 3 || CourseState.LevelIndex == CourseState.TotalLevels - 1))
+				    (secondsSinceWon < NextLevelAwaitTime || levelIndex == maxLevelIndex))
 					return;
 
 				WonTime = float.PositiveInfinity;
-				CourseState.ProgressStateToNextLevel();
+				
+				var currentPlayer = CurrentCoursePlayer.CurrentLevelPlayer.CurrentValue;
+				currentPlayer.Complete();
+				
+				LogTools.Log($"Completed level player {currentPlayer.Index}");
+				LogTools.Log($"new check value {currentPlayer.Index == maxLevelIndex} | existing value {CurrentCoursePlayer.IsOnLastLevel.CurrentValue}");
 
-				if (CourseState.LevelIndex >= CourseState.SelectedCourse!.Value.Levels.Count)
+				if (currentPlayer.Index == maxLevelIndex)
 					Instance.ShowEndScreen();
 				else
 					Instance.ShowCountdown();
@@ -666,23 +781,25 @@ namespace CourseMod.Patches {
 
 		[HarmonyPatch(typeof(scnGame), "Update")]
 		private static class EscapeCourse {
+			public static bool PreventEscape;
+			
 			private static void Postfix() {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return;
 
-				if (CourseState.WonState)
+				if (PreventEscape)
 					return;
 
 				if (Input.GetKeyDown(KeyCode.Escape)) {
 					PauseControl.SetPaused(scrController.instance, true);
-					CourseFailUpdate.ShowEndScreen();
+					CourseFailUpdate.ShowEndScreen(true);
 				}
 			}
 		}
 
 		[HarmonyPatch(typeof(scrController), "TogglePauseGame")]
 		private static class PauseControl {
-			private static bool Prefix() => !CourseState.PlayingCourse;
+			private static bool Prefix() => CurrentCoursePlayer == null;
 
 			public static void SetPaused(scrController controller, bool pauseState) {
 				controller.paused = pauseState;
@@ -690,7 +807,7 @@ namespace CourseMod.Patches {
 				controller.enabled = !pauseState;
 				// Time.timeScale = pauseState ? 0 : 1;
 
-				CourseState.PauseStateFromPatch = pauseState;
+				PatchStateStore.Pause = pauseState;
 
 				if (!pauseState) return;
 
@@ -706,11 +823,11 @@ namespace CourseMod.Patches {
 		[HarmonyPatch(typeof(scrController), "ResetCustomLevel")]
 		private static class CheckRestart {
 			private static bool Prefix(ref IEnumerator __result) {
-				if (!CourseState.PlayingCourse)
+				if (CurrentCoursePlayer == null)
 					return true;
 
-				if (CourseState.LevelIndex != 0) {
-					CourseState.ResetProgress();
+				if (CurrentCoursePlayer.Index.Value != 0) {
+					// CourseState.ResetProgress();
 					Instance.ProceedToLevel();
 
 					__result = new EmptyEnumerator();
@@ -736,17 +853,11 @@ namespace CourseMod.Patches {
 				if (!__instance.gameworld)
 					return;
 
-				if (!CourseState.PlayingCourse)
-					return;
-
-				if (CourseState.SelectedCourse is not { } course)
+				if (CurrentCoursePlayer == null)
 					return;
 
 				CourseLevelCompleteUpdate.WonTime = null;
-				CourseState.WonState = true;
-
-				if (course.Levels.Count <= CourseState.LevelIndex + 1)
-					CourseState.Failed = false;
+				EscapeCourse.PreventEscape = true;
 			}
 		}
 

@@ -129,13 +129,17 @@ namespace CourseMod.Components.Scenes {
 			public void SetupPlayRecord() {
 				try {
 					if (!CourseCollection.CourseRecords.ContainsKey(CourseId)) {
-						Course course = CourseCollection.Courses[CourseId];
-						CoursePlayRecord record = course.GetPlayRecord();
+						var course = CourseCollection.Courses[CourseId];
+						var record = course.GetPlayRecord();
 						if (_instance._taskCancellationToken.IsCancellationRequested) {
 							LogTools.Log("Task cancelled, aborting play record load.");
 							return;
 						}
-						lock (_instance) CourseCollection.CourseRecords[CourseId] = record;
+
+						lock (_instance) {
+							if (record is { } r)
+								CourseCollection.CourseRecords[CourseId] = r;
+						}
 					}
 
 					PlayRecordSetupState = 1;
