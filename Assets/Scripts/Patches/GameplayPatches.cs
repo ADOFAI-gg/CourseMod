@@ -335,8 +335,7 @@ namespace CourseMod.Patches {
 				if (CurrentCoursePlayer == null)
 					return true;
 
-				scrUIController.instance.WipeToBlack(WipeDirection.StartsFromRight);
-				GCS.sceneToLoad = CourseSelectScene.SCENE_NAME;
+				ADOBase.loader.LoadSceneWithTransition(WipeDirection.StartsFromRight, CourseSelectScene.SCENE_NAME);
 
 				ResetEverything();
 
@@ -401,7 +400,7 @@ namespace CourseMod.Patches {
 				var controller = scrController.instance;
 				var system = controller.planetarySystem;
 
-				for (var i = 0; i < system.planetsUsed && i < system.allPlanets.Count; i++) {
+				for (var i = 0; i < system.maxPlanetColors && i < system.allPlanets.Count; i++) {
 					LogTools.Log($"check planet {i}");
 
 					var planet = system.allPlanets[i];
@@ -451,7 +450,7 @@ namespace CourseMod.Patches {
 			}
 		}
 
-		[HarmonyPatch(typeof(scrController), "ValidInputWasTriggered")]
+		[HarmonyPatch(typeof(scrPlayerManager), "AnyValidInputWasTriggered")]
 		private static class PreventLevelStartUntilCompletingCountdownTransition {
 			private static bool Prefix(ref bool __result) =>
 				__result = CurrentCoursePlayer == null || !PatchStateStore.PauseRequested;
@@ -496,15 +495,15 @@ namespace CourseMod.Patches {
 			}
 		}
 
-		[HarmonyPatch(typeof(scrMistakesManager), "AddHit")]
+		[HarmonyPatch(typeof(scrMarginTracker), "AddHit")]
 		private static class ConstraintCheckerHook {
-			private static void Postfix(scrMistakesManager __instance, HitMargin hit) {
+			private static void Postfix(scrMarginTracker __instance, HitMargin hit) {
 				if (CurrentCoursePlayer == null) return;
 
-				var payload = new LevelProgressFromPatch() {
+				var payload = new LevelProgressFromPatch {
 					CurrentFloor = __instance.controller.currFloor.seqID,
 					CurrentHitMargin = hit,
-					HitMarginsCount = scrMistakesManager.hitMarginsCount,
+					HitMarginsCount = scrMistakesManager.marginTrackers[0].hitMarginsCount,
 				};
 
 				CurrentCoursePlayer.CurrentLevelPlayer.CurrentValue?.Stats.ScoreUpdated.OnNext(payload);
@@ -696,7 +695,7 @@ namespace CourseMod.Patches {
 					DesiredFailText = null;
 				}
 
-				if (!controller.ValidInputWasTriggered() || scrUIController.instance.isWipingToBlack)
+				if (!ADOBase.playerManager.AnyValidInputWasTriggered() || scrUIController.instance.isWipingToBlack)
 					return;
 
 				ShowEndScreen();

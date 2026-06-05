@@ -27,7 +27,8 @@
         "Assembly-CSharp-firstpass.dll",
         "Newtonsoft.Json.dll",
         "Fluent.Net.dll",
-        "R3.dll"
+        "R3.dll",
+        "UnityFileDialog.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

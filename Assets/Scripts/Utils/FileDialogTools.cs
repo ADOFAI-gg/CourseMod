@@ -1,43 +1,28 @@
 using System.IO;
-using System.Linq;
-using CourseMod.Components.Scenes;
-using JetBrains.Annotations;
-using SFB;
-using UnityModManagerNet;
+using UnityFileDialog;
 
 namespace CourseMod.Utils {
 	public static class FileDialogTools {
-		private static ExtensionFilter[] _courseFilter;
-		private static ExtensionFilter[] _courseAndZipFilter;
-		private static ExtensionFilter[] _zipFilter;
-		private static ExtensionFilter[] _customLevelFilter;
-		private static ExtensionFilter[] _imageFilter;
-		private static ExtensionFilter[] _videoFilter;
+		private static string[] _courseExtensions;
+		private static string[] _courseAndZipExtensions;
+		private static string[] _zipExtensions;
+		private static string[] _imageExtensions;
+		private static string[] _videoExtensions;
 
 		private static bool _hasSetup;
 
 		private static void Setup() {
 			Assert.False(_hasSetup, "Extension filters are already been setup");
 
-			_courseFilter = new[] { new ExtensionFilter(I18N.Get("general-file-dialog-course-description"), "course") };
+			_courseExtensions = new[] { "course" };
 
-			_courseAndZipFilter = new[] {
-				new ExtensionFilter(I18N.Get("general-file-dialog-course-description"), "course", "zip")
-			};
+			_courseAndZipExtensions = new[] { "course", "zip" };
 
-			_zipFilter = new[] {
-				new ExtensionFilter(I18N.Get("general-file-dialog-course-description"), "zip")
-			};
+			_zipExtensions = new[] { "zip" };
 
-			_customLevelFilter = new[] {
-				new ExtensionFilter(I18N.GetFromGame("editor.dialog.adofaiLevelDescription"), GCS.levelExtensions)
-			};
+			_imageExtensions = new[] { "jpg", "jpeg", "png" };
 
-			_imageFilter = new[] {
-				new ExtensionFilter(I18N.GetFromGame("editor.dialog.imageFileFormat"), "jpg", "jpeg", "png")
-			};
-
-			_videoFilter = new[] { new ExtensionFilter(I18N.GetFromGame("editor.dialog.videoFileFormat"), "webm") };
+			_videoExtensions = new[] { "webm" };
 
 			_hasSetup = true;
 		}
@@ -48,11 +33,11 @@ namespace CourseMod.Utils {
 			var courseDirectory =
 				initialPath.IsNullOrEmpty() ? "" : Path.GetDirectoryName(Path.GetFullPath(initialPath))!;
 
-			var result = StandaloneFileBrowser.OpenFilePanel(
-				I18N.GetFromGame("editor.dialog.selectImage"),
-				courseDirectory,
-				_imageFilter,
-				false).FirstOrDefault();
+			var result = FileBrowser.PickFile(
+				courseDirectory, 
+				I18N.GetFromGame("editor.dialog.imageFileFormat"),
+				_imageExtensions, 
+				I18N.GetFromGame("editor.dialog.selectImage"));
 
 			return result;
 		}
@@ -60,34 +45,37 @@ namespace CourseMod.Utils {
 		public static string OpenVideoFileDialog(string initialPath) {
 			if (!_hasSetup) Setup();
 
-			var result = StandaloneFileBrowser.OpenFilePanel(
-				I18N.GetFromGame("editor.dialog.selectVideo"),
+			var result = FileBrowser.PickFile(
 				initialPath == null ? "" : Path.GetDirectoryName(Path.GetFullPath(initialPath)),
-				_videoFilter,
-				false).FirstOrDefault();
+				I18N.GetFromGame("editor.dialog.videoFileFormat"),
+				_videoExtensions,
+				I18N.GetFromGame("editor.dialog.selectVideo"));
 
 			return result;
 		}
 
 		public static string OpenCourseFileDialog(string initialPath) {
 			if (!_hasSetup) Setup();
-			var result = StandaloneFileBrowser.OpenFilePanel(
-				I18N.Get("editor-file-dialog-open-course"),
+
+			var result = FileBrowser.PickFile(
 				initialPath ?? "",
-				_courseAndZipFilter,
-				false).FirstOrDefault();
+				I18N.Get("general-file-dialog-course-description"),
+				_courseAndZipExtensions,
+				I18N.Get("editor-file-dialog-open-course"));
 
 			return result;
 		}
 
 		public static string SaveCourseFileDialog(string initialPath) {
 			if (!_hasSetup) Setup();
-			var result = StandaloneFileBrowser.SaveFilePanel(
-				I18N.Get("editor-file-dialog-save-course"),
+
+			var result = FileBrowser.SaveFile(
 				initialPath ?? "",
 				initialPath.IsNullOrEmpty() ? "" : Path.GetFileName(initialPath),
-				_courseFilter);
-			
+				I18N.Get("general-file-dialog-course-description"),
+				_courseExtensions,
+				I18N.Get("editor-file-dialog-save-course"));
+
 			if (!result.EndsWith(".course")) {
 				result += ".course";
 			}
@@ -97,11 +85,13 @@ namespace CourseMod.Utils {
 
 		public static string ExportCourseFileDialog(string initialPath) {
 			if (!_hasSetup) Setup();
-			var result = StandaloneFileBrowser.SaveFilePanel(
-				I18N.Get("editor-file-dialog-save-course"),
+
+			var result = FileBrowser.SaveFile(
 				initialPath ?? "",
 				initialPath.IsNullOrEmpty() ? "" : Path.GetFileName(initialPath),
-				_zipFilter);
+				I18N.Get("general-file-dialog-course-description"),
+				_zipExtensions,
+				I18N.Get("editor-file-dialog-save-course"));
 
 			if (!result.EndsWith(".zip")) {
 				result += ".zip";
@@ -113,14 +103,13 @@ namespace CourseMod.Utils {
 		public static string OpenLevelFileDialog() {
 			if (!_hasSetup) Setup();
 
-
-			string result = StandaloneFileBrowser.OpenFilePanel(
-				I18N.GetFromGame("editor.dialog.openFile"),
+			var result = FileBrowser.PickFile(
 				Persistence.GetLastUsedFolder(),
-				_customLevelFilter,
-				false).FirstOrDefault();
+				I18N.GetFromGame("editor.dialog.adofaiLevelDescription"),
+				GCS.levelExtensions,
+				I18N.GetFromGame("editor.dialog.openFile"));
 
-			if (string.IsNullOrEmpty(result) || !File.Exists(result)) return null; //you closed the window manually.
+			if (string.IsNullOrEmpty(result) || !File.Exists(result)) return null; // you closed the window manually.
 
 			return result;
 		}
