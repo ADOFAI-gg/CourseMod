@@ -12,9 +12,6 @@ namespace CourseMod.Player {
 		public CoursePlayer(Course course) {
 			Course = course;
 			
-			ConstraintChecker = new(this);
-			_disposables.Add(ConstraintChecker);
-			
 			LevelPlayers = Course.Levels.Select((level, index) => new LevelPlayer(this, index, level)).ToArray();
 			PlayRecords = new CourseLevelPlayRecord?[LevelPlayers.Length];
 			Array.Fill(PlayRecords, null);
@@ -40,6 +37,9 @@ namespace CourseMod.Player {
 			
 			_disposables.Add(LevelPlayerInitialized);
 			_disposables.Add(CourseEnded);
+
+			ConstraintChecker = new(this);
+			_disposables.Add(ConstraintChecker);
 		}
 
 		public readonly Course Course;

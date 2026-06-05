@@ -62,7 +62,11 @@ namespace CourseMod.Player {
 			return;
 
 			Observable<T> ObserveStat<T>(Func<LevelPlayerStats, Observable<T>> select) =>
-				coursePlayer.CurrentLevelPlayer.Select(x => select(x.Stats)).Switch();
+				coursePlayer.CurrentLevelPlayer
+					.Select(x => x == null
+						             ? Observable.Empty<T>()
+						             : select(x.Stats))
+					.Switch();
 		}
 
 		private readonly int _deathConstraintInitialValue;
