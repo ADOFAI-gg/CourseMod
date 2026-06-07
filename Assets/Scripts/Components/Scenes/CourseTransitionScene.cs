@@ -981,13 +981,6 @@ namespace CourseMod.Components.Scenes {
 			LogTools.Log("Transition - ProceedToLevel()");
 			KillAllTweens();
 
-			// TODO fix this case where progressing to the last index causes end of course
-			if (_coursePlayer.IsOnLastLevel.CurrentValue) {
-				LogTools.Log("Reached the end of course");
-				ShowEndScreen();
-				return;
-			}
-
 			var levelIndex = _coursePlayer.Index.Value;
 
 			LogTools.Log($"Proceed to level index {levelIndex}");
