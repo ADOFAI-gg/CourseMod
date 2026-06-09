@@ -38,24 +38,22 @@ namespace CourseMod.Player {
 					                      (!coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
 						                      .DisableLifeConstraint ?? true))));
 			}
+			
+			if(tests.Count == 0) return;
 
-			var testResults = Observable.Zip(tests).ThrottleLastFrame(1).ToReadOnlyReactiveProperty();
+			var testResults = Observable.CombineLatest(tests).ToReadOnlyReactiveProperty();
 			testResults.AddTo(ref d);
 
-			var isPassingConstraint = testResults.Select(results => results?.All(test => test.Item2) ?? true);
+			var isPassingConstraint = testResults.Select(results => results?.Where(test => !test.Item2).Select(test => test.Item1).ToArray());
 
 			isPassingConstraint.Subscribe(result => {
-				if (result) {
+				if (result == null || result.Length == 0) {
 					// skip records within constraint
 					return;
 				}
 
-				var failedConstraints = testResults.CurrentValue
-					.Where(test => !test.Item2)
-					.Select(test => test.Item1);
-
-				coursePlayer.FailFromConstraints(failedConstraints);
-			});
+				coursePlayer.FailFromConstraints(result);
+			}).AddTo(ref d);
 
 			_disposable = d.Build();
 

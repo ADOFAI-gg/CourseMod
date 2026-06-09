@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using CourseMod.Components.Scenes;
@@ -11,6 +12,7 @@ using CourseMod.Utils;
 using DG.Tweening;
 using HarmonyLib;
 using JetBrains.Annotations;
+using R3;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityModManagerNet;
@@ -59,6 +61,12 @@ namespace CourseMod {
 			Thread.CurrentThread.Name ??= "Main Thread";
 
 			I18N.Setup();
+			SetupObservable();
+		}
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		private static void SetupObservable() {
+			ObservableSystem.DefaultFrameProvider = UnityFrameProvider.Update;
 		}
 
 		private static bool OnToggle(UnityModManager.ModEntry _, bool value) {
