@@ -106,9 +106,7 @@ namespace CourseMod.Components.Scenes {
 				_playerSettings.UseNoFail = !_playerSettings.UseNoFail;
 				_playerSettings.Save();
 
-				toggleNoFailButton.buttonText.text = I18N.Get(_playerSettings.UseNoFail
-					? "general-no-fail-enabled"
-					: "general-no-fail-disabled");
+				UpdateNoFailText();
 			});
 			settingsButton.button.onClick.AddListener(OpenSettings);
 			playButton.button.onClick.AddListener(() => {
@@ -133,6 +131,7 @@ namespace CourseMod.Components.Scenes {
 
 		private void Start() {
 			UpdateCourseInfo();
+			UpdateNoFailText();
 		}
 
 		private void Update() {
@@ -305,6 +304,12 @@ namespace CourseMod.Components.Scenes {
 			totalResultContainer.gameObject.SetActive(showResult);
 
 			UpdateLeftPanelBorder();
+		}
+
+		private void UpdateNoFailText() {
+			toggleNoFailButton.buttonText.text = I18N.Get(_playerSettings.UseNoFail ?
+				                                              "general-no-fail-enabled" : 
+				                                              "general-no-fail-disabled");
 		}
 
 		private void ResetCourseInfo() {
