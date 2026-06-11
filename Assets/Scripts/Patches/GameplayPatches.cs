@@ -203,10 +203,7 @@ namespace CourseMod.Patches {
 			var controller = scrController.instance;
 			if (!controller) return;
 
-			var planetarySystem = controller.planetarySystem;
-			if (!planetarySystem) return;
-
-			planetarySystem.Die(PlanetarySystem.DeathAnimation.CrumbleAndExplode);
+			controller.FailAction(false, false, "", true);
 			LogTools.Log("Killed planetary system");
 
 			if (!string.IsNullOrEmpty(deathReason))
@@ -510,7 +507,7 @@ namespace CourseMod.Patches {
 					HitMarginsCount = scrMistakesManager.hitMarginsCount,
 				};
 
-				CurrentCoursePlayer.CurrentLevelPlayer.CurrentValue.Stats.ScoreUpdated.OnNext(payload);
+				CurrentCoursePlayer.CurrentLevelPlayer.CurrentValue?.Stats.ScoreUpdated.OnNext(payload);
 			}
 		}
 
@@ -669,13 +666,11 @@ namespace CourseMod.Patches {
 		[HarmonyPatch(typeof(scrController), "FailAction")]
 		private static class CourseFailDetector {
 			private static void Postfix() {
-				if (CurrentCoursePlayer == null) return;
+				if (CurrentCoursePlayer is not { Failed: false }) return;
 				if (ControllerStateTracker.FutureState is not (States.Fail or States.Fail2))
 					return;
 				
-				var sf = new StackFrame(2);
-				if (sf.GetMethod()?.DeclaringType?.Assembly == typeof(scrController).Assembly)
-					CurrentCoursePlayer.FailFromGameMechanics();
+				CurrentCoursePlayer.FailFromGameMechanics();
 			}
 		}
 
@@ -698,6 +693,7 @@ namespace CourseMod.Patches {
 
 					targetText.gameObject.SetActive(true);
 					targetText.text = DesiredFailText;
+					DesiredFailText = null;
 				}
 
 				if (!controller.ValidInputWasTriggered() || scrUIController.instance.isWipingToBlack)

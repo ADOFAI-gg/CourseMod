@@ -56,10 +56,10 @@ namespace CourseMod.Player {
 		
 		private readonly List<IDisposable> _disposables = new();
 
-		private bool _failed;
+		public bool Failed;
 
 		public void NextLevel() {
-			_failed = false;
+			Failed = false;
 
 			if (Index.Value + 1 >= LevelPlayers.Length) {
 				LogTools.LogWarning($"Index out of range; was given {Index.Value}");
@@ -73,7 +73,7 @@ namespace CourseMod.Player {
 			_disposables.Add(nextPlayer.PlayFinished.Subscribe(record => {
 				PlayRecords[Index.Value] = record;
 
-				if (IsOnLastLevel.CurrentValue && !_failed)
+				if (IsOnLastLevel.CurrentValue && !Failed)
 					EndInternal();
 			}));
 		}
@@ -89,7 +89,7 @@ namespace CourseMod.Player {
 
 		private void FailInternal(CourseFailReason reason) => FailInternal(new [] { reason });
 		private void FailInternal(CourseFailReason[] reasons) {
-			_failed = true;
+			Failed = true;
 			
 			CurrentLevelPlayer.CurrentValue?.Fail(!reasons.Contains(CourseFailReason.VanillaGameMechanics),
 				reasons.First().ToFailMessage());
