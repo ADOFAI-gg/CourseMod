@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -15,6 +14,8 @@ namespace CourseMod.DataModel {
 		public SerializableHitMargins HitMargins;
 		public int TotalFloors;
 
+		public bool Failed;
+
 		public string GetLogString() {
 			var s = new StringBuilder();
 			s.AppendLine("Object <CourseLevelPlayRecord>:");
@@ -24,6 +25,7 @@ namespace CourseMod.DataModel {
 			s.Append("\tㄴ XAccuracy: ").Append(XAccuracy).AppendLine();
 			s.Append("\tㄴ HitMargins: ").AppendLine(JsonConvert.SerializeObject(HitMargins));
 			s.Append("\tㄴ TotalFloors: ").Append(TotalFloors).AppendLine();
+			s.Append("\tㄴ Failed: ").Append(Failed).AppendLine();
 
 			return s.ToString();
 		}

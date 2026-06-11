@@ -40,12 +40,12 @@ namespace CourseMod.Player
 				GameplayPatches.KillPlayer(deathReason);
 			}
 
-			End();
+			End(true);
 		}
 
-		public void Complete() => End();
+		public void Complete() => End(false);
 
-		private void End() {
+		private void End(bool failed) {
 			CourseLevelPlayRecord record = new() {
 				CourseChecksum = ChecksumTools.ComputeCourseChecksum(_coursePlayer.Course).Hash,
 				GameplayChecksum = Level.GameplayChecksum,
@@ -53,6 +53,7 @@ namespace CourseMod.Player
 				LevelNumber = Index,
 				XAccuracy = Stats.AbsoluteXAccuracy.CurrentValue,
 				TotalFloors = _tiles,
+				Failed = failed
 			};
 
 			Stats.Reset();
