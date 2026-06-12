@@ -328,6 +328,24 @@ namespace CourseMod.Patches {
 			}
 		}
 
+		[HarmonyPatch(typeof(PauseMenu), "GenerateButtons")]
+		private static class FixPauseMenuSetup {
+			private static readonly MethodInfo ChangeTarget = AccessTools.Method(typeof(ADOBase), "get_isScnGame");
+			private static bool IsScnGameAndNotCourse() => CurrentCoursePlayer == null && ADOBase.isScnGame;
+
+			private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
+				foreach (var instruction in instructions) {
+					if (instruction.Calls(ChangeTarget)) {
+						yield return new CodeInstruction(OpCodes.Call,
+							AccessTools.Method(typeof(FixPauseMenuSetup), nameof(IsScnGameAndNotCourse)));
+						continue;
+					}
+
+					yield return instruction;
+				}
+			}
+		}
+
 		// TODO this is probably redundant
 		[HarmonyPatch(typeof(scrController), "QuitToMainMenu")]
 		private static class QuitToMainMenu {
