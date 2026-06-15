@@ -9,6 +9,12 @@ namespace CourseMod.DataModel {
 		public CourseLevelPlayRecord[] Records;
 
 		[JsonIgnore]
+		private bool? _cleared;
+
+		[JsonIgnore]
+		public bool Cleared => _cleared ??= Records.All(r => !r.Failed);
+
+		[JsonIgnore]
 		public float TotalAccuracy => Records.Length == 0
 			? 0
 			: Records.Sum(record => record.XAccuracy);
