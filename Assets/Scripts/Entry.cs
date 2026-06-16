@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using CourseMod.Components.Scenes;
 using CourseMod.DataModel;
-using CourseMod.Patches;
 using CourseMod.Utils;
 using DG.Tweening;
 using HarmonyLib;
@@ -61,12 +60,17 @@ namespace CourseMod {
 			Thread.CurrentThread.Name ??= "Main Thread";
 
 			I18N.Setup();
-			SetupObservable();
+			SetupDependency();
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		private static void SetupObservable() {
-			ObservableSystem.DefaultFrameProvider = UnityFrameProvider.Update;
+		private static void SetupDependency() {
+			// Setup R3
+			UnityProviderInitializer.SetDefaultObservableSystem();
+			typeof(PlayerLoopHelper).GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
+			
+			// Setup UniTask
+			typeof(Cysharp.Threading.Tasks.PlayerLoopHelper).GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
 		}
 
 		private static bool OnToggle(UnityModManager.ModEntry _, bool value) {
