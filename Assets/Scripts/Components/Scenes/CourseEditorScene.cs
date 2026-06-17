@@ -504,9 +504,11 @@ namespace CourseMod.Components.Scenes {
 			}
 
 
-			var course = CurrentCourse ?? Course.Default;
+			CurrentCourse ??= Course.Default;
 
 			ApplyUIToCourse();
+
+			var course = CurrentCourse.Value;
 
 			course.Settings.ThumbnailFile =
 				ReplaceSlash(course.Settings.ThumbnailFile);
@@ -558,8 +560,8 @@ namespace CourseMod.Components.Scenes {
 		}
 
 		private void ApplyUIToCourse() {
-			Course course = GetCourseWithAssertion();
-			CourseSettings settings = course.Settings;
+			var course = GetCourseWithAssertion();
+			ref var settings = ref course.Settings;
 
 			settings.ThumbnailFile =
 				string.IsNullOrEmpty(_lastThumbnailPath) || !File.Exists(_lastThumbnailPath)
@@ -578,7 +580,6 @@ namespace CourseMod.Components.Scenes {
 			settings.LifeConstraint =
 				StringTools.GetNullOrParsedInt(lifeConstraintField.inputFieldStyle.inputField.text);
 
-			course.Settings = settings;
 			course.Levels = levelList.ToLevels();
 			CurrentCourse = course;
 		}
