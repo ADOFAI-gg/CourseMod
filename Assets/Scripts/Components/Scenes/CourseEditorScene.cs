@@ -504,13 +504,9 @@ namespace CourseMod.Components.Scenes {
 			}
 
 
-			var course = CurrentCourse ??= Course.Default;
+			var course = CurrentCourse ?? Course.Default;
 
 			ApplyUIToCourse();
-
-#if DEBUG
-			course.GenerateReadonlyLevelsInfo();
-#endif
 
 			course.Settings.ThumbnailFile =
 				ReplaceSlash(course.Settings.ThumbnailFile);
@@ -522,6 +518,11 @@ namespace CourseMod.Components.Scenes {
 				course.Levels[i] = level;
 			}
 
+#if DEBUG
+			course.GenerateReadonlyLevelsInfo();
+#endif
+			
+			CurrentCourse = course;
 			File.WriteAllText(LastOpenedCoursePath!, JsonConvert.SerializeObject(CurrentCourse, Formatting.Indented));
 
 			SetDirty(false);
