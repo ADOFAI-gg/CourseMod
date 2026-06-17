@@ -21,7 +21,7 @@ using UnityEngine.SceneManagement;
 namespace CourseMod.Patches {
 	[UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
 	public static class GameplayPatches {
-		private static CourseTransitionScene Instance => CourseTransitionScene.Instance;
+		private static CourseTransitionScene Instance => CourseTransitionScene.Instance ? CourseTransitionScene.Instance : null;
 
 		[HarmonyPatch(typeof(scnLevelSelect), "Update")]
 		private static class EnterCourseScene {
@@ -712,7 +712,7 @@ namespace CourseMod.Patches {
 				if (failWithIntent)
 					CurrentCoursePlayer.FailFromPlayerIntent();
 
-				Instance.ShowEndScreen();
+				Instance?.ShowEndScreen();
 				
 				DisplayedEndScreen = true;
 				LogTools.Log($"DisplayedEndScreen = true");
@@ -769,9 +769,9 @@ namespace CourseMod.Patches {
 				LogTools.Log($"new check value {currentPlayer.Index == maxLevelIndex} | existing value {CurrentCoursePlayer.IsOnLastLevel.CurrentValue}");
 
 				if (currentPlayer.Index == maxLevelIndex)
-					Instance.ShowEndScreen();
+					Instance?.ShowEndScreen();
 				else
-					Instance.ShowCountdown();
+					Instance?.ShowCountdown();
 			}
 		}
 
@@ -824,7 +824,7 @@ namespace CourseMod.Patches {
 
 				if (CurrentCoursePlayer.Index.Value != 0) {
 					// CourseState.ResetProgress();
-					Instance.ProceedToLevel();
+					Instance?.ProceedToLevel();
 
 					__result = new EmptyEnumerator();
 					return false;
