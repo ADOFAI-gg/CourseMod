@@ -6,8 +6,9 @@ using UnityEngine;
 namespace CourseMod.Player
 {
 	public class CountdownPlayer : IDisposable {
-		public CountdownPlayer(int? countdownSeconds) {
-			_countdownSeconds = countdownSeconds;
+		public CountdownPlayer(CoursePlayer coursePlayer) {
+			_coursePlayer = coursePlayer;
+			_countdownSeconds = coursePlayer.Course.Settings.CountdownSeconds;
 
 			Reset();
 		}
