@@ -8,7 +8,7 @@ using UnityEngine;
 namespace CourseMod.Player {
 	public class LevelPlayerStats : IDisposable {
 		public LevelPlayerStats(int totalTiles) {
-			_tilesLeft = ScoreUpdated.Select(score => totalTiles - score.CurrentFloor)
+			_tilesLeft = ScoreUpdated.Select(score => totalTiles - (score.CurrentFloor + 1))
 				.ToReadOnlyReactiveProperty(totalTiles);
 
 			LatestHitMargin = ScoreUpdated.Select(score => score.CurrentHitMargin);
