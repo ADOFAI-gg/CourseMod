@@ -139,10 +139,12 @@ namespace CourseMod.Utils {
 
 			weightSum += padFloorSum;
 			
-			var divisor = Math.Max(1, hitMarginsCount.Sum());
+			var divisor = Math.Max(0, hitMarginsCount.Sum());
 			divisor += padFloorDivisor;
 			
-			return weightSum / divisor;
+			return divisor == 0 ? 
+				       weightSum == 0 ? 1 : 0
+				       : weightSum / divisor;
 		}
 	}
 }
