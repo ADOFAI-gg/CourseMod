@@ -14,19 +14,19 @@ namespace CourseMod.Player {
 			var tests = new List<Observable<(ConstraintType, bool)>>();
 
 			if (settings.AccuracyConstraint is { } accConstraint)
-				tests.Add(ObserveStat(stats => stats.MaxPossibleXAccuracy).Select(acc =>
-					(ConstraintType.Accuracy, acc >= accConstraint &&
-					                          (!coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
-						                          .DisableAccuracyConstraint ?? true))));
+				tests.Add(ObserveStat(stats => stats.MaxPossibleXAccuracy).Select(acc => 
+					(ConstraintType.Accuracy, acc >= accConstraint ||
+					                          coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
+						                          .DisableAccuracyConstraint != false)));
 
 			if (settings.DeathConstraint is { } deathConstraint) {
 				_deathConstraint.Value =
 					_deathConstraintInitialValue = deathConstraint;
 
 				tests.Add(ObserveStat(stats => stats.LatestHitMargin.Where(h => h?.IsFail() ?? false)).Select(_ =>
-					(ConstraintType.Death, --_deathConstraint.Value > 0 &&
-					                       (!coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
-						                       .DisableDeathConstraint ?? true))));
+					(ConstraintType.Death, --_deathConstraint.Value > 0 ||
+					                       coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
+						                       .DisableDeathConstraint != false)));
 			}
 
 			if (settings.LifeConstraint is { } lifeConstraint) {
@@ -34,9 +34,9 @@ namespace CourseMod.Player {
 					_lifeConstraintInitialValue = lifeConstraint;
 
 				tests.Add(ObserveStat(stats => stats.LatestHitMargin.Where(h => !h?.IsPerfect() ?? false)).Select(_ =>
-					(ConstraintType.Life, --_lifeConstraint.Value > 0 &&
-					                      (!coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
-						                      .DisableLifeConstraint ?? true))));
+					(ConstraintType.Life, --_lifeConstraint.Value > 0 ||
+					                      coursePlayer.CurrentLevelPlayer.CurrentValue?.Level
+						                      .DisableLifeConstraint != false)));
 			}
 			
 			if(tests.Count == 0) return;
