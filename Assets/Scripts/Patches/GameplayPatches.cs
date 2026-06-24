@@ -203,7 +203,7 @@ namespace CourseMod.Patches {
 			var controller = scrController.instance;
 			if (!controller) return;
 
-			controller.FailAction(false, false, "", true);
+			controller.playerOne.Die(false, false, "", true);
 			LogTools.Log("Killed planetary system");
 
 			if (!string.IsNullOrEmpty(deathReason))
