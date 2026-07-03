@@ -239,6 +239,7 @@ namespace CourseMod.Patches {
 				LogTools.Log($"DisplayedEndScreen = false");
 
 				ControllerFail2StateChangeActionOverrider.ExplodeTween?.Kill();
+				scrUIController.instance.HideEndscreenLanterns();
 
 				var game = scnGame.instance;
 				game.ResetScene(true);
@@ -253,6 +254,7 @@ namespace CourseMod.Patches {
 				yield return null;
 				yield return null;
 				scnGame.instance.LoadAndPlayLevel(GCS.customLevelPaths[0]); // the rest are done with patches
+				ADOBase.playerManager.SetAllPlayerResponsive(responsive: true);
 
 				EscapeCourse.PreventEscape = false;
 			}
