@@ -9,6 +9,7 @@ using Newtonsoft.Json.Serialization;
 namespace CourseMod.DataModel {
 	[JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy), ItemNullValueHandling = NullValueHandling.Ignore)]
 	public struct Course {
+		public int Version;
 		public string Name;
 		public string Description;
 		public string Creator;
@@ -71,6 +72,7 @@ namespace CourseMod.DataModel {
 
 		static Course() {
 			_default = new Course {
+				Version = 1,
 				Levels = new List<CourseLevel>(),
 				Name = "",
 				Description = "",

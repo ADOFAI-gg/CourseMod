@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using CourseMod.DataModel;
 using Newtonsoft.Json;
@@ -69,12 +68,16 @@ namespace CourseMod.Utils {
 		private static Course ParseCourse(string path, string content) {
 			var result = JsonConvert.DeserializeObject<Course>(content);
 
+			var resetHash = result.Version < 1;
+
 			result.FilePath = path;
 			var courseDirectory = Path.GetDirectoryName(path)!;
 
 			for (var i = 0; i < result.Levels.Count; i++) {
 				var level = result.Levels[i];
 				level.AbsolutePath = Path.Combine(courseDirectory, level.Path);
+
+				if(resetHash) level.GameplayChecksum = null;
 
 				result.Levels[i] = level;
 			}
