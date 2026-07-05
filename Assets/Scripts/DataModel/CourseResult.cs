@@ -7,7 +7,7 @@ namespace CourseMod.DataModel {
 		[CanBeNull] public CourseFailReason[] FailReasons;
 
 		public CoursePlayRecord ToStoredValue() =>
-			new() { Records = Records };
+			new() { Version = 1, Records = Records };
 
 		public bool Equals(CourseResult other) => Equals(Records, other.Records) && Equals(FailReasons, other.FailReasons);
 		public override bool Equals(object obj) => obj is CourseResult other && Equals(other);

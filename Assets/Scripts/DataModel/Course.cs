@@ -42,7 +42,11 @@ namespace CourseMod.DataModel {
 			if (!File.Exists(recordPath))
 				return null;
 
-			return JsonConvert.DeserializeObject<CoursePlayRecord?>(File.ReadAllText(recordPath));
+			var result = JsonConvert.DeserializeObject<CoursePlayRecord?>(File.ReadAllText(recordPath));
+
+			if (result is { Version: < 1 }) result = null;
+
+			return result;
 		}
 
 		public string GetPlayRecordPath() {

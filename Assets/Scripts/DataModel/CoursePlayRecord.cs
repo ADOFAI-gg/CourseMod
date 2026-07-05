@@ -6,6 +6,7 @@ using Newtonsoft.Json.Serialization;
 namespace CourseMod.DataModel {
 	[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
 	public struct CoursePlayRecord : IEquatable<CoursePlayRecord> {
+		public int Version; // To change the version, modify it in CourseResult.ToStoredValue().
 		public CourseLevelPlayRecord[] Records;
 
 		[JsonIgnore]
