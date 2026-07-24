@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,7 +8,6 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis;
-using Unity.Plastic.Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -67,11 +65,9 @@ namespace CourseMod.Editor {
 
 		private async Task BuildAssemblies() {
 			var names = new[] {
-				"CourseMod", "UniTask", "R3.Unity", "Newtonsoft.Json", "R3", "Microsoft.Bcl.TimeProvider",
-				"Microsoft.Bcl.AsyncInterfaces", "ObservableCollections", "ObservableCollections.R3",
-				"System.Runtime.CompilerServices.Unsafe", "Microsoft.NET.StringTools", "System.Threading.Channels",
-				"Reflex", "System.Diagnostics.DiagnosticSource", "ImGui.NET", "System.Numerics.Vectors",
-				"System.Collections.Immutable", "Fluent.Net"
+				"CourseMod", "Newtonsoft.Json", "Microsoft.NET.StringTools",
+				"Reflex", "System.Diagnostics.DiagnosticSource", "ImGui.NET", 
+				"Fluent.Net"
 			};
 
 			var namesSuffixed = names.Select(x => x + ".dll").ToList();

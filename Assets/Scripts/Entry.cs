@@ -60,17 +60,6 @@ namespace CourseMod {
 			Thread.CurrentThread.Name ??= "Main Thread";
 
 			I18N.Setup();
-			SetupDependency();
-		}
-
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		private static void SetupDependency() {
-			// Setup R3
-			UnityProviderInitializer.SetDefaultObservableSystem();
-			typeof(PlayerLoopHelper).GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
-			
-			// Setup UniTask
-			typeof(Cysharp.Threading.Tasks.PlayerLoopHelper).GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
 		}
 
 		private static bool OnToggle(UnityModManager.ModEntry _, bool value) {
