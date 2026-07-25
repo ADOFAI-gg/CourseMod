@@ -140,6 +140,7 @@ namespace CourseMod.Utils {
 					if (propertyInfo.pro) continue;
 					if (key == "floor" || !propertyInfo.encode) continue;
 					if (!rawAction.TryGetValue(key, out var obj10)) {
+						if(propertyInfo.value_default == null) continue; // Compatibility with other mods
 						sb.Append(key).Append(':').Append(GetValueString(propertyInfo.value_default)).Append(',');
 					} else {
 						if (propertyInfo.type == PropertyType.Bool && obj10 is string str2)
