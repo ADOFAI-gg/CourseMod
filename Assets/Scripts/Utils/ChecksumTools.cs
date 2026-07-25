@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -42,10 +43,12 @@ namespace CourseMod.Utils {
 			}
 		}
 
-		private static readonly string[] GameplayAffectingEvents = {
+		private static readonly HashSet<string> GameplayAffectingEvents = new() {
 			"SetSpeed", "Twirl", "Pause", "ScaleMargin", "Hold", "FreeRoam", "FreeRoamTwirl", "FreeRoamRemove",
 			"MultiPlanet", "AutoPlayTiles"
 		};
+
+		private static readonly HashSet<LevelEventType> GameplayAffectingEventsType = GameplayAffectingEvents.Select(Enum.Parse<LevelEventType>).ToHashSet();
 
 		private const string ContentHashMethod = "sha256";
 
@@ -92,37 +95,38 @@ namespace CourseMod.Utils {
 
 				if (!GameplayAffectingEvents.Contains(eventTypeStr)) continue;
 				var eventInfo = GCS.levelEventsInfo[eventTypeStr];
-
-				var eventType = RDUtils.ParseEnum<LevelEventType>(eventTypeStr);
-
-				if (eventType == LevelEventType.AddDecoration && !rawAction.ContainsKey("decorationImage")) {
-					rawAction["decorationImage"] = rawAction["decText"];
-					rawAction.Remove("decText");
-				}
-
-				if (eventType is LevelEventType.AddDecoration or LevelEventType.AddText && !rawAction.ContainsKey("parallax")) {
-					var num = (int) rawAction["depth"];
-					num = num != 1 && num != -1 ? num : 0;
-					rawAction["parallax"] = num;
-				}
-
-				if (eventType is LevelEventType.CustomBackground or LevelEventType.BackgroundSettings && !rawAction.ContainsKey("scalingRatio")) {
-					var flag = rawAction.TryGetValue("bgDisplayMode", out var value) && RDUtils.ParseEnum(value as string, BgDisplayMode.FitToScreen) == BgDisplayMode.Unscaled;
-					rawAction["scalingRatio"] = flag ? (int) rawAction["unscaledSize"] : 100;
-					rawAction.Remove("unscaledSize");
-				}
-
-				if (eventType == LevelEventType.AddDecoration && rawAction.TryGetValue("failHitbox", out var value2)) {
-					var flag2 = value2 switch {
-						string text => text == "Enabled",
-						bool flag3 => flag3,
-						_ => false
-					};
-
-					rawAction.TryAdd("hitbox", (flag2 ? HitboxType.Kill : HitboxType.None).ToString());
-				}
-				if (eventType == LevelEventType.ScalePlanets && rawAction.TryGetValue("targetPlanet", out var value3) && value3 is "Both")
-					rawAction["targetPlanet"] = "All";
+				
+				// These events are unaffected.
+				// var eventType = RDUtils.ParseEnum<LevelEventType>(eventTypeStr);
+				//
+				// if (eventType == LevelEventType.AddDecoration && !rawAction.ContainsKey("decorationImage")) {
+				// 	rawAction["decorationImage"] = rawAction["decText"];
+				// 	rawAction.Remove("decText");
+				// }
+				//
+				// if (eventType is LevelEventType.AddDecoration or LevelEventType.AddText && !rawAction.ContainsKey("parallax")) {
+				// 	var num = (int) rawAction["depth"];
+				// 	num = num != 1 && num != -1 ? num : 0;
+				// 	rawAction["parallax"] = num;
+				// }
+				//
+				// if (eventType is LevelEventType.CustomBackground or LevelEventType.BackgroundSettings && !rawAction.ContainsKey("scalingRatio")) {
+				// 	var flag = rawAction.TryGetValue("bgDisplayMode", out var value) && RDUtils.ParseEnum(value as string, BgDisplayMode.FitToScreen) == BgDisplayMode.Unscaled;
+				// 	rawAction["scalingRatio"] = flag ? (int) rawAction["unscaledSize"] : 100;
+				// 	rawAction.Remove("unscaledSize");
+				// }
+				//
+				// if (eventType == LevelEventType.AddDecoration && rawAction.TryGetValue("failHitbox", out var value2)) {
+				// 	var flag2 = value2 switch {
+				// 		string text => text == "Enabled",
+				// 		bool flag3 => flag3,
+				// 		_ => false
+				// 	};
+				//
+				// 	rawAction.TryAdd("hitbox", (flag2 ? HitboxType.Kill : HitboxType.None).ToString());
+				// }
+				// if (eventType == LevelEventType.ScalePlanets && rawAction.TryGetValue("targetPlanet", out var value3) && value3 is "Both")
+				// 	rawAction["targetPlanet"] = "All";
 
 				var active = (bool) rawAction.GetValueOrDefault("active", true);
 
@@ -162,7 +166,7 @@ namespace CourseMod.Utils {
 		public static ChecksumResult ComputeGameplayChecksum(LevelData levelData) {
 			var angles = string.Join(',', levelData.angleData);
 
-			var rawEvents = levelData.levelEvents.Where(x => GameplayAffectingEvents.Contains(x.eventType.ToString()))
+			var rawEvents = levelData.levelEvents.Where(x => GameplayAffectingEventsType.Contains(x.eventType))
 				.Select(x => string.Join(',', x.Encode().Select(kvp => $"{kvp.Key}:{GetValueString(kvp.Value)}")));
 
 			var events = string.Join('\xA7', rawEvents);
