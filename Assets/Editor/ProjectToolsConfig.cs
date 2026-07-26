@@ -71,8 +71,10 @@ namespace CourseMod.Editor {
 						using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
 
 						foreach (var file in Directory.GetFiles(task.Result, "*", SearchOption.AllDirectories)) {
-							archive.CreateEntryFromFile(file,
-								Path.Combine(ModInfo.Info.Id, Path.GetRelativePath(task.Result, file)));
+							var entryName = Path.Combine(ModInfo.Info.Id, Path.GetRelativePath(task.Result, file))
+								.Replace('\\', '/');
+							
+							archive.CreateEntryFromFile(file, entryName);
 						}
 					}
 
