@@ -260,6 +260,9 @@ namespace CourseMod.Patches {
 			}
 
 			private static void Postfix() {
+				if (CurrentCoursePlayer == null)
+					return;
+
 				PatchStateStore.Pause = false;
 				CourseFailUpdate.DisplayedEndScreen = false;
 				LogTools.Log($"DisplayedEndScreen = false");
