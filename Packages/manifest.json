@@ -52,7 +52,6 @@
       "name": "package.openupm.com",
       "url": "https://package.openupm.com",
       "scopes": [
-        "com.cysharp.r3",
         "com.cysharp.unitask",
         "com.github-glitchenzo.nugetforunity"
       ]
