@@ -187,12 +187,12 @@ namespace CourseMod.Utils {
 		}
 
 		public static ChecksumResult ComputeCourseChecksum(Course course) {
-			var settingsExceptThumbnail = JsonConvert.SerializeObject(course.Settings);
+			var settingsExceptBgSprite = JsonConvert.SerializeObject(course.Settings);
 
-			if (course.Settings.ThumbnailFile is { } thumbnailFile)
-				settingsExceptThumbnail = settingsExceptThumbnail.Replace($"\"{thumbnailFile}\"", "null");
+			if (course.Settings.BackgroundSpritePath is { } bgSpritePath)
+				settingsExceptBgSprite = settingsExceptBgSprite.Replace($"\"{bgSpritePath}\"", "null");
 
-			var sum = string.Join("\x1B", JsonConvert.SerializeObject(course.Levels), settingsExceptThumbnail);
+			var sum = string.Join("\x1B", JsonConvert.SerializeObject(course.Levels), settingsExceptBgSprite);
 			return ComputeChecksum(sum);
 		}
 	}

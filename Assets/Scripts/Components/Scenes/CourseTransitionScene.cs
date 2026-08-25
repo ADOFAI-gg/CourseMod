@@ -387,9 +387,9 @@ namespace CourseMod.Components.Scenes {
 
 			var usesAnyConstraint = false;
 
-			if (settings.ThumbnailFile is { } thumbnailFile) {
+			if (settings.BackgroundSpritePath is { } bgSpritePath) {
 				var texture =
-					ImageTools.OpenTexture2D(Path.Combine(Path.GetDirectoryName(course.FilePath)!, thumbnailFile));
+					ImageTools.OpenTexture2D(Path.Combine(Path.GetDirectoryName(course.FilePath)!, bgSpritePath));
 
 				if (texture) {
 					var renderTexture = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);

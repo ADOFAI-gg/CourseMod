@@ -142,10 +142,10 @@ namespace CourseMod.Utils {
 			};
 
 			var courseDirectory = Path.GetDirectoryName(coursePath);
-			var relativeThumbnailPath = course.Settings.ThumbnailFile;
+			var relativeThumbnailPath = course.Settings.BackgroundSpritePath;
 
 			if (!string.IsNullOrEmpty(relativeThumbnailPath)) {
-				var thumbnailPath = StringTools.CombinePathNullable(courseDirectory, course.Settings.ThumbnailFile);
+				var thumbnailPath = StringTools.CombinePathNullable(courseDirectory, course.Settings.BackgroundSpritePath);
 
 				if (File.Exists(thumbnailPath))
 					files.Add(thumbnailPath);

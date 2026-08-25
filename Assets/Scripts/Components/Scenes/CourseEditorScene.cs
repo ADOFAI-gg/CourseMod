@@ -395,13 +395,13 @@ namespace CourseMod.Components.Scenes {
 		}
 
 		private void InitCurrentDirCourse(ref Course course) {
-			string coursePath = LastOpenedCoursePath;
-			string courseDir = Path.GetDirectoryName(coursePath);
+			var coursePath = LastOpenedCoursePath;
+			var courseDir = Path.GetDirectoryName(coursePath);
 			Assert.True(courseDir != null, "The course directory doesn't exist");
 
 			course.FilePath ??= coursePath;
-			for (int i = 0; i < course.Levels.Count; i++) {
-				CourseLevel courseLevel = course.Levels[i];
+			for (var i = 0; i < course.Levels.Count; i++) {
+				var courseLevel = course.Levels[i];
 				courseLevel.AbsoluteFilePath = Path.Combine(courseDir!, courseLevel.Path);
 				course.Levels[i] = courseLevel;
 			}
@@ -432,7 +432,7 @@ namespace CourseMod.Components.Scenes {
 			Course course = GetCourseWithAssertion();
 			CourseSettings settings = course.Settings;
 
-			if (settings.ThumbnailFile == null || !TryChangeThumbnail(settings.ThumbnailFile)) {
+			if (settings.BackgroundSpritePath == null || !TryChangeThumbnail(settings.BackgroundSpritePath)) {
 				RemoveThumbnail();
 			}
 
@@ -510,8 +510,8 @@ namespace CourseMod.Components.Scenes {
 
 			var course = CurrentCourse.Value;
 
-			course.Settings.ThumbnailFile =
-				ReplaceSlash(course.Settings.ThumbnailFile);
+			course.Settings.BackgroundSpritePath =
+				ReplaceSlash(course.Settings.BackgroundSpritePath);
 
 			for (var i = 0; i < course.Levels.Count; i++) {
 				var level = course.Levels[i];
@@ -563,7 +563,7 @@ namespace CourseMod.Components.Scenes {
 			var course = GetCourseWithAssertion();
 			ref var settings = ref course.Settings;
 
-			settings.ThumbnailFile =
+			settings.BackgroundSpritePath =
 				string.IsNullOrEmpty(_lastThumbnailPath) || !File.Exists(_lastThumbnailPath)
 					? null
 					: Path.GetRelativePath(Path.GetDirectoryName(course.FilePath)!, _lastThumbnailPath);
