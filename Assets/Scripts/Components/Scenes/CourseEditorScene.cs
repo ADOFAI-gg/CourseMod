@@ -402,7 +402,7 @@ namespace CourseMod.Components.Scenes {
 			course.FilePath ??= coursePath;
 			for (int i = 0; i < course.Levels.Count; i++) {
 				CourseLevel courseLevel = course.Levels[i];
-				courseLevel.AbsolutePath = Path.Combine(courseDir!, courseLevel.Path);
+				courseLevel.AbsoluteFilePath = Path.Combine(courseDir!, courseLevel.Path);
 				course.Levels[i] = courseLevel;
 			}
 		}
@@ -663,9 +663,9 @@ namespace CourseMod.Components.Scenes {
 		}
 
 		private void Play(List<CourseLevel> courseLevels) {
-			if (!courseLevels.All(e => File.Exists(e.AbsolutePath))) {
+			if (!courseLevels.All(e => File.Exists(e.AbsoluteFilePath))) {
 				throw new ArgumentException(
-					$"Some files don't exist. Files: [{string.Join(", ", courseLevels.Select(e => e.AbsolutePath))}]",
+					$"Some files don't exist. Files: [{string.Join(", ", courseLevels.Select(e => e.AbsoluteFilePath))}]",
 					nameof(courseLevels));
 			}
 

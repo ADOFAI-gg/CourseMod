@@ -75,7 +75,7 @@ namespace CourseMod.Utils {
 
 			for (var i = 0; i < result.Levels.Count; i++) {
 				var level = result.Levels[i];
-				level.AbsolutePath = Path.Combine(courseDirectory, level.Path);
+				level.AbsoluteFilePath = Path.Combine(courseDirectory, level.Path);
 
 				if(resetHash) level.GameplayChecksum = null;
 

@@ -16,6 +16,7 @@ namespace CourseMod.DataModel {
 				Artist = ((string) settings["artist"]).SanitizeForUI();
 				Creator = ((string) settings["author"]).SanitizeForUI();
 				Song = ((string) settings["song"]).SanitizeForUI();
+				PreviewImagePath = ((string) settings["previewImage"]).SanitizeForUI();
 
 				Tiles = levelDict.TryGetValue("pathData", out var value)
 					? RDEditorUtils.DecodeString(value).Length
@@ -36,5 +37,6 @@ namespace CourseMod.DataModel {
 		public readonly string Creator;
 		public readonly string Song;
 		public readonly int Tiles;
+		public readonly string PreviewImagePath;
 	}
 }

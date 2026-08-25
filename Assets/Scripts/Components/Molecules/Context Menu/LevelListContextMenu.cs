@@ -394,7 +394,7 @@ namespace CourseMod.Components.Molecules.ContextMenu {
 					if (string.IsNullOrEmpty(levelPath) || !File.Exists(levelPath)) return;
 
 					string dstPath = FileTools.CopyLevelToCourseDir(Handler.LastOpenedCoursePath, levelPath);
-					levelData.AbsolutePath = dstPath;
+					levelData.AbsoluteFilePath = dstPath;
 					item.levelData = levelData;
 
 					var coursePath = CourseEditorScene.CurrentCourse!.Value.FilePath;

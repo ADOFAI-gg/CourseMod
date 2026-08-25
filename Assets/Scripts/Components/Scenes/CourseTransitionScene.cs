@@ -1103,7 +1103,7 @@ namespace CourseMod.Components.Scenes {
 
 			var course = coursePlayer.Course;
 
-			Assert.True(course.Levels.Select(l => l.AbsolutePath).All(File.Exists),
+			Assert.True(course.Levels.Select(l => l.AbsoluteFilePath).All(File.Exists),
 				"One or more levels have missing files");
 			Assert.False(course.Levels.Count == 0, "A course must have at least one level");
 

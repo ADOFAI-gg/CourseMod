@@ -157,7 +157,7 @@ namespace CourseMod.Components.Scenes {
 						if (CourseCollection.LevelMetas[level.Path] == null) {
 							try {
 								LogTools.Log("Loading level meta for level at path " + level.Path);
-								LevelMeta meta = new(level.AbsolutePath);
+								LevelMeta meta = new(level.AbsoluteFilePath);
 								if (_instance._taskCancellationToken.IsCancellationRequested) {
 									LogTools.Log("Task cancelled, aborting level meta load.");
 									return;

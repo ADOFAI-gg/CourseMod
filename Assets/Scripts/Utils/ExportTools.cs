@@ -125,7 +125,7 @@ namespace CourseMod.Utils {
 				files.Add(thumbnailPath);
 
 			foreach(var level in course.Levels) 
-				foreach(var file in GetLevelFiles(level.AbsolutePath)) 
+				foreach(var file in GetLevelFiles(level.AbsoluteFilePath)) 
 					files.Add(file);
 
 			using var stream = new FileStream(Path.Combine(courseDirectory, filename), FileMode.Create);
@@ -152,7 +152,7 @@ namespace CourseMod.Utils {
 			}
 
 			foreach(var level in course.Levels) 
-				foreach(var file in GetLevelFiles(level.AbsolutePath)) 
+				foreach(var file in GetLevelFiles(level.AbsoluteFilePath)) 
 					files.Add(file);
 
 			foreach (var file in files) {

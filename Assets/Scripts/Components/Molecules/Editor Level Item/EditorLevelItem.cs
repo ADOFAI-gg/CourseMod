@@ -164,10 +164,10 @@ namespace CourseMod.Components.Molecules.EditorLevelItem {
 
 			_levelFileWatcher?.Dispose();
 
-			_levelFileWatcher = new FileSystemWatcher(Path.GetDirectoryName(level.AbsolutePath)!);
+			_levelFileWatcher = new FileSystemWatcher(Path.GetDirectoryName(level.AbsoluteFilePath)!);
 			_levelFileWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName |
 			                                 NotifyFilters.LastWrite | NotifyFilters.CreationTime;
-			_levelFileWatcher.Filter = Path.GetFileName(level.AbsolutePath);
+			_levelFileWatcher.Filter = Path.GetFileName(level.AbsoluteFilePath);
 			_levelFileWatcher.EnableRaisingEvents = true;
 
 			_levelFileWatcher.Created += (_, _) => {
@@ -177,10 +177,10 @@ namespace CourseMod.Components.Molecules.EditorLevelItem {
 				LevelFileExists = false;
 			};
 			_levelFileWatcher.Renamed += (_, _) => {
-				LevelFileExists = File.Exists(level.AbsolutePath);
+				LevelFileExists = File.Exists(level.AbsoluteFilePath);
 			};
 
-			LevelFileExists = File.Exists(level.AbsolutePath);
+			LevelFileExists = File.Exists(level.AbsoluteFilePath);
 		}
 
 		private void LoadLevelInfo(ref CourseLevel level) {

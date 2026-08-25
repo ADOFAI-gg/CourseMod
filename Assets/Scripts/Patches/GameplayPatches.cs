@@ -231,7 +231,7 @@ namespace CourseMod.Patches {
 		[HarmonyPatch(typeof(scnGame), "Awake")]
 		public static class SetupGameSceneParameters {
 			public static void LoadLevel(LevelPlayer player, [CanBeNull] Action callback) {
-				var absPath = player.Level.AbsolutePath;
+				var absPath = player.Level.AbsoluteFilePath;
 				
 				LogTools.Log($"Loading level at '{absPath}'");
 				StartLevelAfterTwoFrames.ConsumableAction = callback;
