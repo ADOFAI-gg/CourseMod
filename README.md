@@ -1,5 +1,8 @@
 # Course Mod
 
+![image](./docs/banner.png)
+<sup><sub>Carefully drawn by [CrackThrough](https://github.com/CrackThrough).</sub></sup>
+
 ## Description
 A mod for the game [“A Dance of Fire and Ice”](https://store.steampowered.com/app/977950/A_Dance_of_Fire_and_Ice/).
 
@@ -10,7 +13,7 @@ and even allow other mod developers to arbitrarily open any courses.
 More of that on the [wiki](https://github.com/ADOFAI-gg/CourseMod/wiki).
 
 ## Overview
-- Uses Unity 2022.3.33f1 (must be in sync with the game)
+- Uses Unity 6000.3.21f1 (must be in sync with the game)
 - Uses [Harmony 2](https://harmony.pardeike.net/)
 - Build options available at `Project Tools` under Unity Editor’s `Modding` ribbon menu.
 
