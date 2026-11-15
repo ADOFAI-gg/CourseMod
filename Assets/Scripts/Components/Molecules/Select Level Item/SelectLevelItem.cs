@@ -31,7 +31,7 @@ namespace CourseMod.Components.Molecules.SelectLevelItem {
 		private Tween _tween;
 
 		private void Awake() {
-			button.onClick.AddListener(() => CourseSelect.SelectItem(this));
+			button.onClick.AddListener(() => CourseSelect?.SelectItem(this));
 
 			UpdateAppearance(true);
 		}

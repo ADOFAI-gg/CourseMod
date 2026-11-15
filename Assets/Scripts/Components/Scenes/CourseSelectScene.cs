@@ -151,7 +151,13 @@ namespace CourseMod.Components.Scenes {
 
 			return;
 
-			void LoadScene() => SceneManager.LoadScene(GCNS.sceneLevelSelect);
+			void LoadScene()
+			{
+				GameplayPatches.CurrentCoursePlayer?.Dispose();
+				GameplayPatches.CurrentCoursePlayer = null;
+
+				SceneManager.LoadScene(GCNS.sceneLevelSelect);
+			}
 		}
 
 		private void UpdateLeftPanelBorder() {
