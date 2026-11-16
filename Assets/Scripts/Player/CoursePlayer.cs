@@ -116,6 +116,7 @@ namespace CourseMod.Player {
 			LogTools.Log($"Course ended with score {JsonConvert.SerializeObject(result)}");
 		}
 
+		[UsedImplicitly]
 		public IDisposable SubscribeEveryResult(Action<CourseLevelPlayRecord> callback)
 		{
 			var d = new CompositeDisposable();
