@@ -62,6 +62,11 @@ namespace CourseMod.Player
 			LogTools.Log($"LevelPlayer {Index} ended with score {JsonConvert.SerializeObject(record)}");
 		}
 
+		public void Reset()
+		{
+			Stats.Reset();
+		}
+
 		public void Dispose() {
 			Stats?.Dispose();
 			CanStartPlaying?.Dispose();

@@ -90,7 +90,7 @@ namespace CourseMod.Player {
 		private void FailInternal(CourseFailReason reason) => FailInternal(new [] { reason });
 		private void FailInternal(CourseFailReason[] reasons) {
 			Failed = true;
-			
+
 			CurrentLevelPlayer.CurrentValue?.Fail(!reasons.Contains(CourseFailReason.VanillaGameMechanics),
 				reasons.First().ToFailMessage());
 
@@ -99,22 +99,30 @@ namespace CourseMod.Player {
 
 		private void EndInternal([CanBeNull] CourseFailReason[] failReasons = null) {
 			var result = new CourseResult {
-				Records = PlayRecords.Where(record => record.HasValue && !record.Value.Equals(default(CourseLevelPlayRecord))).Cast<CourseLevelPlayRecord>().ToArray(),
+				Records = PlayRecords.Where(record => record.HasValue && !record.Value.Equals(default)).Cast<CourseLevelPlayRecord>().ToArray(),
 				FailReasons = failReasons,
 			};
 			
 			ConstraintChecker.Reset();
 
-			// TODO I shouldn't be doing this because this is a responsibility of LevelPlayer
 			foreach (var player in LevelPlayers)
-				player.Stats.Reset();
+				player.Reset();
 			
 			Array.Fill(PlayRecords, null);
-			
+
 			Index.Value = -1;
-			
+
 			CourseEnded.OnNext(result);
 			LogTools.Log($"Course ended with score {JsonConvert.SerializeObject(result)}");
+		}
+
+		public IDisposable SubscribeEveryResult(Action<CourseLevelPlayRecord> callback)
+		{
+			var d = new CompositeDisposable();
+			foreach (var player in LevelPlayers)
+				player.PlayFinished.Subscribe(callback).AddTo(d);
+
+			return d;
 		}
 
 		public void Dispose() {
