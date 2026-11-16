@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
@@ -110,6 +111,8 @@ namespace CourseMod.Editor {
 					true));
 		}
 
+		private static readonly string[] PluginDirectoryNames = { "AnyCPU", "x86_64" };
+		private static readonly string[] UfbLibraryFilenames = { "libufb.so", "ufb.dll" };
 		private void CopyAssemblies() {
 			var assemblyPaths = new List<string>();
 			foreach (var asm in AppDomain.CurrentDomain.GetAssemblies()) {
@@ -131,20 +134,60 @@ namespace CourseMod.Editor {
 
 				var files = Directory.GetFiles(dir, "*.dll", SearchOption.AllDirectories);
 				foreach (var file in files) {
-					var name = Path.GetFileName(file);
-					if (assemblyNames.Contains(name)) continue;
-					if (BlacklistedAssemblyNames.Contains(name)) continue;
+					CopyFile(file, assemblyNames);
+				}
+			}
 
-					var dest = Path.Combine(_packagePath, name);
-					File.Copy(file, dest, true);
-					File.WriteAllText(dest + ".meta", $@"
+			var pluginsDir = Path.Combine(DataPath, "Plugins");
+			foreach (var pluginsNestedDir in PluginDirectoryNames) {
+				var dir = Path.Combine(pluginsDir, pluginsNestedDir);
+				if (!Directory.Exists(dir)) continue;
+
+				var files = Directory.GetFiles(dir, "*.dll");
+				foreach (var file in files) {
+					if (UfbLibraryFilenames.Contains(Path.GetFileName(file)))
+						CopyFile(file, assemblyNames);
+				}
+			}
+		}
+
+		private void CopyFile(string file, List<string> assemblyNames)
+		{
+			var name = Path.GetFileName(file);
+			if (assemblyNames.Contains(name)) return;
+			if (BlacklistedAssemblyNames.Contains(name)) return;
+
+			var dest = Path.Combine(_packagePath, name);
+			File.Copy(file, dest, true);
+			File.WriteAllText(dest + ".meta", GetMetaFileContent(file));
+		}
+
+		private static string GetMetaFileContent(string filename)
+		{
+			StringBuilder b = new($@"
 fileFormatVersion:
     guid: {GUID.Generate()}
 PluginImporter:
     isExplicitlyReferenced: 1
     validateReferences: 1");
-				}
+
+			if (filename.Contains("UniTask"))
+			{
+				b.Append(@"
+	platformData:
+	    Any:
+	      enabled: 0
+	      settings:
+	        Exclude Android: 1
+	        Exclude Editor: 1
+	        Exclude Linux64: 1
+	        Exclude OSXUniversal: 1
+	        Exclude Win: 1
+	        Exclude Win64: 1
+	        Exclude iOS: 1");
 			}
+
+			return b.ToString();
 		}
 	}
 }
